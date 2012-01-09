@@ -100,27 +100,68 @@ class WorkSpace : boost::noncopyable {
     void LoadAllTables(const std::vector<std::string> &args);
     void IndexAllReferencesQueries(const std::vector<std::string> &args);
     void ExportAllTables(const std::vector<std::string> &args);
-
+    /*
+     * @brief this is an auxiliary function that loads a table 
+     *        from a file to the workspace. This function 
+     *        needs the TableType to be specified
+     **/
     template<typename TableType>
     void LoadTable(const std::string &name, boost::shared_ptr<TableType> table);
-
+    /**
+     * @brief this is an auxiliary function that loads a table
+     *        from a file to the workspace. This function 
+     *        needs an mpl::vector of table types that it will
+     *        help the function to find the type of the loading
+     *        matrix
+     */
     template<typename TableSetType>
     void LoadFromFile(const std::string &name,
       const std::string &filename);
-    
+    /**
+     * @brief loads a data table to the workspace. You should 
+     *        use this one for data tables
+     */
     void LoadDataTableFromFile(const std::string &name,
       const std::string &filename);
-
+    /**
+     * @brief loads a data table to the workspace. You should use
+     *         this one for parameter tables
+     */
     void LoadParameterTableFromFile(const std::string &name,
       const std::string &filename);
-
+    /**
+     * @brief this function indexes a table in place. It mutates the table.
+     *        It is a blocking function, but also dangerous. You have to 
+     *        make sure that nobody can access the data while being indexed.
+     *        The advantage of this method is that avoids copying the data
+     */
     void IndexTable(const std::string &variable, 
+        const std::string &metric,
+        const std::string &metric_args,
+        const int leaf_size);
+    /**
+     * @brief this function indexes a table variable. The indexed table
+     *        is stored in the new variable_indexed. The advantage of this
+     *        method is that it is safe. 
+     *
+     */
+    void IndexTable(const std::string &variable, 
+        const std::string &variable_indexed,
         const std::string &metric,
         const std::string &metric_args,
         const int leaf_size);
 
     void ExportToFile(const std::string &name, const std::string &filename);
-  
+ 
+    /**
+     * @brief This function returns immediately. All it does is to check
+     *        if the table exists and if it does it checks if it is ready
+     *        to be attached. In other words if you call IsTableAvailable
+     *        and it returns true then calling Attach will not block 
+     *        because it means the table is ready
+     */
+    bool IsTableAvailable(const std::string &name);
+
     template<typename TableType>
     void Attach(const std::string &name, 
         boost::shared_ptr<TableType> *table);

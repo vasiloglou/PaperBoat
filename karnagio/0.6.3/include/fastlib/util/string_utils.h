@@ -25,6 +25,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef FL_LITE_FASTLIB_UTIL_STRING_UTILS_H
 #define FL_LITE_FASTLIB_UTIL_STRING_UTILS_H
 #include <vector>
+#include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/algorithm/string/classification.hpp"
 #include "boost/algorithm/string/predicate.hpp"
@@ -33,7 +34,9 @@ namespace fl{
 
 // Splits a string on character supplied. Undefined behaviour is multiple 
 // consecutive characters appear in the string.
-inline void split_line_on_char(std::string& line, char split_char, std::vector<std::string>& results) {
+inline void split_line_on_char(std::string& line, 
+                               char split_char, 
+                               std::vector<std::string>& results) {
   int start_pos = 0;
   while (1) {
     int space_pos = line.find(split_char, start_pos);
@@ -48,10 +51,11 @@ inline void split_line_on_char(std::string& line, char split_char, std::vector<s
   results.push_back(line.substr(start_pos, line.length() - start_pos)); // push last parameter
 }
 
-inline std::vector<std::string> SplitString(const std::string &input, const std::string &delimeter) {
-   std::vector<std::string> tokens;
-   boost::algorithm::split(tokens, input, boost::algorithm::is_any_of(delimeter));
-   return tokens;
+inline std::vector<std::string> SplitString(const std::string &input,
+    const std::string &delimeter) {
+  std::vector<std::string> tokens;
+  boost::algorithm::split(tokens, input, boost::algorithm::is_any_of(delimeter));
+  return tokens;
 }
 
 inline bool StringStartsWith(const std::string &input, const std::string &test) {
@@ -63,6 +67,18 @@ inline void StringReplace(std::string *input, const std::string &search,
   boost::algorithm::replace_all(*input, search, substitute);
 }
 
+inline std::string StitchStrings(const std::string &a,
+                                const std::string &b) {
+  std::string c=a+b;
+  return c;
+}
+
+template<typename T>
+inline std::string StitchStrings(const std::string &a,
+                                const T &b) {
+  std::string c=a+boost::lexical_cast<std::string>(b);
+  return c;
+}
 }
 
 #endif

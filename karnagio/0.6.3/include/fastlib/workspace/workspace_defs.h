@@ -125,7 +125,10 @@ namespace fl { namespace ws {
   template<typename TableType>
   void WorkSpace::TryToAttach(const std::string &name) {
     boost::mutex* mutex;
-    if (mutex_map_.count(name)==0) {
+    global_mutex_.lock();
+    bool is_name_in_map=mutex_map_.count(name)==0;
+    global_mutex_.unlock();
+    if (is_name_in_map) {
       mutex=new boost::mutex();
       global_mutex_.lock();
       mutex_map_[name].reset(mutex);

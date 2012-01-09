@@ -426,6 +426,32 @@ class SparsePoint {
       >::type::set(elem_, i, value);
     }
 
+    struct LoadNullaryMetafunction1 {
+      struct type {
+        template<typename IteratorType>
+        static void set(Container_t *elem, const IteratorType &it1,
+            const IteratorType &it2) {
+          elem->clear();
+          for(const IteratorType it=it1; it!=it2; ++it) {  
+            elem->operator[](it->first)=it->second;
+          }
+        }
+      };
+    };
+
+    struct LoadNullaryMetafunction2 {
+      struct type {
+        template<typename IteratorType>
+        static void Load(Container_t *elem, const IteratorType &it1,
+            const IteratorType &it2) {
+          elem->clear();
+          for(IteratorType it=it1; it!=it2; ++it) {  
+            elem->push_back(std::make_pair(it->first, it->second));
+          }
+        }
+      };
+    };
+
     /**
      * Loading a sparse point
      * This method assumes that the indices
@@ -434,13 +460,13 @@ class SparsePoint {
     template<typename IteratorType>
     void Load(const IteratorType &it1, const IteratorType &it2) {
       boost::mpl::eval_if <
-      boost::is_same <
-      Container_t,
-      std::map<index_t, CalcPrecision_t>
-      > ,
-      SetGetNullaryMetafunction1,
-      SetGetNullaryMetafunction2
-      >::type::set(elem_, it1, it2);
+        boost::is_same <
+          Container_t,
+          std::map<index_t, CalcPrecision_t>
+        > ,
+        LoadNullaryMetafunction1,
+        LoadNullaryMetafunction2
+      >::type::Load(elem_, it1, it2);
     }
 
 
@@ -869,7 +895,7 @@ double SparsePoint<CalcPrecisionType>::LengthEuclidean(
       * static_cast<double>(it1->second);
     ++it1;
   }
-  return fl::math::Pow<CalcPrecisionType, 1, 2>(result);
+  return fl::math::Pow<double, 1, 2>(result);
 }
 
 

@@ -316,17 +316,19 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
       if (l2norms.empty()) {
         centroid.set(it.attribute(), it.value());
       } else {
-        centroid.set(it.attribute(), it.value()/l2norms[i]);
+        centroid.set(it.attribute(), it.value()/l2norms[id]);
       }
     }
+    // std::cout<<fl::la::LengthEuclidean(centroid)<<std::endl;
   }
 
   typename Table_t::Point_t point, scaled_point;
   for(int32 iteration=0; iteration<n_iterations; ++iteration) {
     cluster_associates.clear();
+    cluster_associates.resize(centroids.n_entries());
     for(index_t i=0; i<table.n_entries(); ++i) {
       table.get(i, &point);
-      double max_dot=0.0;
+      double max_dot=-std::numeric_limits<double>::max();
       int32 argmax_dot=-1;
       for(int32 j=0; j<centroids.n_entries(); ++j) {
         centroids.get(j, &centroid);
@@ -334,46 +336,51 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
         if (!l2norms.empty()) {
           dot/=l2norms[i];
         }
-        if (dot>max_dot) {
+        //DEBUG_ASSERT(fabs(dot)<=1);
+        if (dot>=max_dot) {
           max_dot=dot;
           argmax_dot=j;
         }
       }
+      //std::cout<<std::endl;
       cluster_associates[argmax_dot].push_back(i);
-      // compute the centroids
-      for(int32 j=0; j<cluster_associates.size(); ++j) {
-        std::map<int32, double> new_centroid;
-        for(std::vector<index_t>::iterator it=cluster_associates[j].begin(); 
-            it!=cluster_associates[j].end(); ++it) {
-           typename Table_t::Point_t new_point;
-           table.get(*it, &point);
-           if (!l2norms.empty()) {
-             fl::la::Scale<fl::la::Init>(l2norms[*it], point, &new_point);
-             for(typename Table_t::Point_t::iterator pit=new_point.begin();
-                 pit!=new_point.end(); ++pit) {
-               new_centroid[pit.attribute()]+=pit.value();
-             }
-           } else {
-             for(typename Table_t::Point_t::iterator pit=point.begin();
-                 pit!=point.end(); ++pit) {
-               new_centroid[pit.attribute()]+=pit.value();
-             }
-           }
+    }
+    // compute the centroids
+    for(int32 j=0; j<cluster_associates.size(); ++j) {
+      std::map<int32, double> new_centroid;
+      for(std::vector<index_t>::iterator it=cluster_associates[j].begin(); 
+          it!=cluster_associates[j].end(); ++it) {
+        typename Table_t::Point_t new_point;
+        table.get(*it, &point);
+        if (!l2norms.empty()) {
+          fl::la::Scale<fl::la::Init>(l2norms[*it], point, &new_point);
+          for(typename Table_t::Point_t::iterator pit=new_point.begin();
+              pit!=new_point.end(); ++pit) {
+            new_centroid[pit.attribute()]+=pit.value();
+          }
+        } else {
+          for(typename Table_t::Point_t::iterator pit=point.begin();
+              pit!=point.end(); ++pit) {
+            new_centroid[pit.attribute()]+=pit.value();
+          }
         }
-        double norm=0;
-        for(std::map<int32, double>::iterator it=new_centroid.begin();
-            it!=new_centroid.end(); ++it) {
-          norm+=fl::math::Sqr(it->second);
-        }
-        norm=sqrt(norm);
-        for(std::map<int32, double>::iterator it=new_centroid.begin();
-            it!=new_centroid.end(); ++it) {
-          it->second/=norm;
-        }
-        centroids.get(j, &centroid);
-        centroid.Load(new_centroid.begin(), new_centroid.end());
       }
-    }    
+      double norm=0;
+      for(std::map<int32, double>::iterator it=new_centroid.begin();
+          it!=new_centroid.end(); ++it) {
+        norm+=fl::math::Sqr(it->second);
+      }
+      norm=sqrt(norm);
+      for(std::map<int32, double>::iterator it=new_centroid.begin();
+          it!=new_centroid.end(); ++it) {
+        it->second/=norm;
+      }
+      centroids.get(j, &centroid);
+      centroid.Load(new_centroid.begin(), new_centroid.end());
+      //std::cout<<"## "<<norm<<std::endl;
+      //std::cout<< "** "<<fl::la::LengthEuclidean(centroid)<<std::endl;
+    }
+    fl::logger->Message()<<"iteration="<<iteration<<" completed"<<std::endl;   
   }
   // now it is time for SVD
   ExportedTableType covariance;
@@ -389,9 +396,10 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
     if (sv->get(i, dummy)/sv->get(dummy, dummy)<1e-10) {
       sv->set(i, 0, 0);
       if (true_rank==-1) {
-        true_rank=i;
+        true_rank=i+1;
       }
     } else {
+      true_rank=i+1;
       sv->set(i, index_t(0), sqrt(sv->get(i, dummy)));
     }
   }
@@ -400,10 +408,18 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
       <<true_rank<<") less than ("<< svd_rank<<") you asked"
       <<std::endl;
   }
-  fl::table::Mul<fl::la::Trans, fl::la::NoTrans>(temp_left, 
-      centroids, right_trans);
+  right_trans->SetAll(0.0);
+  for(index_t i=0; i<centroids.n_entries(); ++i) {
+    centroids.get(i, &centroid);
+    for(typename fl::table::DefaultSparseDoubleTable::Point_t::iterator 
+        it=centroid.begin(); it!=centroid.end(); ++it) {
+      right_trans->set(it.attribute(), i, it.value());
+    }
+  }
+  //fl::table::Mul<fl::la::Trans, fl::la::NoTrans>(
+  //    centroids, temp_left, right_trans);
   ExportedTableType temp1, temp2, scaled_right_trans;
-  right_trans->CloneDataOnly(&scaled_right_trans);
+  temp_right_trans.CloneDataOnly(&scaled_right_trans);
   for(index_t i=0; i<scaled_right_trans.n_entries(); ++i) {
     typename ExportedTableType::Point_t point;
     scaled_right_trans.get(i, &point);
@@ -415,17 +431,17 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
       }
     }
   }
-  fl::table::Mul<fl::la::NoTrans, fl::la::NoTrans>(
+  fl::table::Mul<fl::la::NoTrans, fl::la::Trans>(
       table,
-      temp_left,
+      centroids,
       &temp1);
-  fl::table::Mul<fl::la::Trans, fl::la::NoTrans>(
-      temp_left,
+  fl::table::Mul<fl::la::NoTrans, fl::la::Trans>(
       temp1,
-      &temp2);
-  fl::table::Mul<fl::la::Trans, fl::la::NoTrans>(
       scaled_right_trans,
+      &temp2);
+  fl::table::Mul<fl::la::NoTrans, fl::la::Trans>(
       temp2,
+      temp_left,
       left);
 }
 

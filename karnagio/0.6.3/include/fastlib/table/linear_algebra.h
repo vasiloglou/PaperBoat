@@ -60,6 +60,10 @@ namespace fl {namespace table {
         typename TableB::Point_t point_b;
         typename TableC::Point_t point_c;
         if (IsTransA==fl::la::NoTrans && IsTransB==fl::la::Trans) {
+          if (a_table.n_attributes()!=b_table.n_attributes()) {
+            fl::logger->Die()<<"Dimension of input matrices are not "
+              "correct";
+          }
           if (c_table->n_entries()==0) {
             c_table->Init("",
                 std::vector<index_t>(1, b_table.n_entries()),
@@ -96,6 +100,10 @@ namespace fl {namespace table {
               "a product that doesn't make sense"; 
         }
         if (IsTransA==fl::la::Trans && IsTransB==fl::la::NoTrans) {
+          if (a_table.n_entries()!=b_table.n_entries()) {  
+            fl::logger->Die()<<"Dimension of input matrices are not "
+                "correct";
+          }
           if (c_table->n_entries()==0) {
             c_table->Init("",
                 std::vector<index_t>(1, b_table.n_attributes()),
@@ -125,6 +133,10 @@ namespace fl {namespace table {
           }
         }
         if (IsTransA==fl::la::NoTrans && IsTransB==fl::la::NoTrans) {
+          if (a_table.n_attributes()!=b_table.n_entries()) {  
+            fl::logger->Die()<<"Dimension of input matrices are not "
+                "correct";
+          }
           if (c_table->n_entries()==0) {
             c_table->Init("",
                 std::vector<index_t>(1, b_table.n_attributes()),

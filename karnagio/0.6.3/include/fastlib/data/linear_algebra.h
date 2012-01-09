@@ -256,7 +256,7 @@ class mixed_ops {
         }
       private:
         const double alpha_;
-        const MatrixType1 matrix1_;
+        const MatrixType1 &matrix1_;
         MatrixType2 *matrix2_;
     };
 
