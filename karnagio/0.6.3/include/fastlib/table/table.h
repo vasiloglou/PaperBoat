@@ -182,6 +182,10 @@ class Table : boost::noncopyable {
     // CloneData will make a point by point copy
     // it will not copy index
     void CloneDataOnly(Table_t *table);
+    /**
+     * @brief Appends a table of the same type to the current table
+     */
+    void Append(Table_t &table);
     template<typename IndexArgsType>
     void SplitNode(IndexArgsType &args, Tree_t *node);
 

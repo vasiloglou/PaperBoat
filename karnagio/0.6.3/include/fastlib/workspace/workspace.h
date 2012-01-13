@@ -130,6 +130,25 @@ class WorkSpace : boost::noncopyable {
     void LoadParameterTableFromFile(const std::string &name,
       const std::string &filename);
     /**
+     * @brief loads a sequence of files to the workspace. 
+     *        vm: is variable map of program options
+     *        input_argument: is the input argument to be imported in files
+     *                        The function will search for the following
+     *                        arguments in the vm, input_argument+"_prefix_in"
+     *                        input_argument+"_num_in", input_argument+"_in"
+     *                        if it finds input_argument+"_prefix_in" it will 
+     *                        also need to find input_argument+"_num_in". 
+     *                        It will import files with the specified prefix
+     *                        from 0 to num. If it finds input_argument+"_in"
+     *                        then it assumes it is a comma separated list
+     *                        of files
+     */
+    void LoadFileSequence(const boost::program_options::variables_map &vm, 
+      const std::string &flag_argument, 
+      const std::string &variable_name, 
+      std::vector<std::string> *references_filenames);
+
+    /**
      * @brief this function indexes a table in place. It mutates the table.
      *        It is a blocking function, but also dangerous. You have to 
      *        make sure that nobody can access the data while being indexed.
@@ -152,7 +171,15 @@ class WorkSpace : boost::noncopyable {
         const int leaf_size);
 
     void ExportToFile(const std::string &name, const std::string &filename);
- 
+    
+    /**
+     * @brief
+     */
+    void ExportToFileSequence(
+        const boost::program_options::variables_map &vm, 
+        const std::string &var_name_prefix, 
+        const std::string &flag_argument, 
+        const std::vector<std::string> *file_sequence);
     /**
      * @brief This function returns immediately. All it does is to check
      *        if the table exists and if it does it checks if it is ready

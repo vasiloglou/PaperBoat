@@ -189,6 +189,15 @@ void Table<TemplateMap>::CloneDataOnly(Table<TemplateMap> *table) {
 }
 
 template<typename TemplateMap>
+void Table<TemplateMap>::Append(Table<TemplateMap> &table) {
+  Point_t point;
+  for(index_t i=0;i<table.n_entries(); ++i) {
+    table.get(i, &point);
+    this->push_back(point);
+  }
+}
+
+template<typename TemplateMap>
 void Table<TemplateMap>::DeleteIndex() {
   metric_type_id_ = "";
   num_of_nodes_=0;
