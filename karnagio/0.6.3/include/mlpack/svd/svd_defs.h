@@ -23,7 +23,7 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 /**
- * @file quicsvd_main.cc
+ * @file svd_defs.cc
  *
  * This file implements command line interface for the QUIC-SVD
  * method. It approximate the original matrix by another matrix
@@ -76,6 +76,11 @@ int fl::ml::Svd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<st
    "The stochastic gradient descent requires the data to be randomized. "
    "If you think that your data are not randomized then set this flag to true. "
    "It might slow down the performance but it will improve the results."
+  )
+  ("l2normalize", 
+   boost::program_options::value<bool>()->default_value(true),
+   "For svd through concept vector decomposition you need to have your data "
+   "L2 mormalized. If your data is not L2 normalized then set this flag true"
   )
   ("n_epochs",
    boost::program_options::value<index_t>()->default_value(5),

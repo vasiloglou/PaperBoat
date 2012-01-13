@@ -26,7 +26,7 @@ POSSIBILITY OF SUCH DAMAGE.
 * @file svd.h
 *
 * This file implements the interface of Svd class
-* It approximate the original matrix by another matrix
+* It approximates the original matrix by another matrix
 * with smaller dimension to a certain degree specified by the
 * user and then make SVD decomposition in the projected supspace.
 *

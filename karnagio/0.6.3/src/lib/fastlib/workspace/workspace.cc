@@ -187,7 +187,10 @@ namespace fl { namespace ws {
         const std::string &metric_args,
         const int leaf_size) {
     boost::mutex* mutex;
-    if (mutex_map_.count(variable)==0) {
+    global_mutex_.lock();
+    bool is_name_in_map=mutex_map_.count(variable)==0;
+    global_mutex_.unlock();
+    if (is_name_in_map) {
       mutex=new boost::mutex();
       global_mutex_.lock();
       mutex_map_[variable].reset(mutex);
@@ -252,7 +255,10 @@ namespace fl { namespace ws {
 
   void WorkSpace::ExportToFile(const std::string &name, const std::string &filename) {
     boost::mutex* mutex;
-    if (mutex_map_.count(name)==0) {
+    global_mutex_.lock();
+    bool is_name_in_map=mutex_map_.count(name)==0;
+    global_mutex_.unlock();
+    if (is_name_in_map) {
       mutex=new boost::mutex();
       global_mutex_.lock();
       mutex_map_[name].reset(mutex);
@@ -277,6 +283,24 @@ namespace fl { namespace ws {
     global_mutex_.lock();
     mutex->unlock();
     global_mutex_.unlock();
+  }
+
+  bool WorkSpace::IsTableAvailable(const std::string &name) {
+    global_mutex_.lock();
+    bool is_name_in_map=mutex_map_.count(name)==0;
+    if (is_name_in_map) {
+      global_mutex_.unlock();
+      return false;
+    } else {
+      boost::mutex* mutex;
+      mutex=mutex_map_[name].get();
+      global_mutex_.unlock();
+      bool lock_success=mutex->try_lock();
+      if (lock_success==true) {
+        mutex->unlock();
+      }
+      return lock_success;
+    }
   }
 
   template<typename TableType>
