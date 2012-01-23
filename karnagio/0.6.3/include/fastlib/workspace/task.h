@@ -72,6 +72,12 @@ namespace fl{ namespace ws {
   template<typename DataAccessType, 
            int (* ExecutorPtr)(DataAccessType *, 
            const std::vector<std::string> &)>
-  typename Task<DataAccessType, ExecutorPtr>::ExecutorPtr_t Task<DataAccessType, ExecutorPtr>::function_ptr=ExecutorPtr;
+  typename Task<DataAccessType, 
+                ExecutorPtr>::
+                  ExecutorPtr_t 
+                  Task<
+                    DataAccessType, 
+                    ExecutorPtr
+                  >::function_ptr=ExecutorPtr;
 }}
 #endif

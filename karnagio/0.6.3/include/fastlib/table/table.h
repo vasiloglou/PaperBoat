@@ -55,6 +55,23 @@ POSSIBILITY OF SUCH DAMAGE.
    }
  }
 
+ namespace table_set {
+   template<typename>
+   class General;
+
+   template<typename>
+   class Special;
+ }
+
+ namespace table_get {
+   template<typename>
+   class General;
+
+   template<typename>
+   class Special;
+ }
+
+
 class TreeTest;
 /**
  *  @brief The first fastlib database like table
@@ -86,6 +103,7 @@ class Table : boost::noncopyable {
     typedef typename TableArgs_t::DatasetType  Dataset_t;
     typedef typename Dataset_t::IsNativeMatrix_t IsNativeMatrix_t;
     typedef typename Dataset_t::IsMatrixOnly_t IsMatrixOnly_t;
+    typedef typename Dataset_t::DenseBasicStorageType_t DenseBasicStorageType_t;
     typedef typename Dataset_t::ExportedPointCollection_t ExportedPointCollection_t;
     typedef typename Dataset_t::Point_t Point_t;
     typedef typename Dataset_t::CalcPrecision_t CalcPrecision_t;
@@ -225,10 +243,14 @@ class Table : boost::noncopyable {
     index_t num_of_nodes() const;
     const std::string get_tree_metric();
     void get(index_t point_id, Point_t *entry) const;
-    double get(index_t i, index_t j);
+    double get(index_t i, index_t j=0);
     void get(index_t i, std::vector<std::pair<index_t,double> > *point);
     void get(index_t i, signed char *meta1, double *meta2, int *meta3);
+    std::pair<index_t, Point_t*> &get_cached_point();
     void set(index_t i, index_t j, double v);
+    void SetAll(double value);
+    void UpdatePlus(index_t i, index_t j, double value);
+    void UpdateMul(index_t i, index_t j, double value);
     void push_back(std::string &point);
     void push_back(Point_t &point);
     index_t n_attributes() const;
@@ -312,6 +334,11 @@ class Table : boost::noncopyable {
   protected:
     void direct_get_(index_t point_id, Point_t *entry) const;
     index_t  direct_get_id_(index_t point_id) const;
+  // friend help structure
+  friend struct table_set::General<Table_t>;
+  friend struct table_set::Special<Table_t>;
+  friend struct table_get::General<Table_t>;
+  friend struct table_get::Special<Table_t>;
 };
 }; // namesapce tree
 }; // namespace fl

@@ -182,6 +182,49 @@ namespace fl { namespace ws {
     this->schedule(boost::bind(&WorkSpace::ExportAllTablesTask, this, args));
   }
 
+  void WorkSpace::LoadFileSequence(
+      const boost::program_options::variables_map &vm, 
+      const std::string &flag_argument, 
+      const std::string &variable_name, 
+      std::vector<std::string> *references_filenames) {
+ 
+    if (vm.count(flag_argument+"_in")>0) {
+      *references_filenames=
+        fl::SplitString(vm[flag_argument+"_in"].as<std::string>(), ",");    
+    } else {
+      if (vm.count(flag_argument+"_prefix_in")>0) {
+        if (vm.count(flag_argument+"_num_in")==0) {
+          fl::logger->Die()<<"Since you defined flag "
+            <<"--"<<flag_argument+"_prefix_in"
+            <<", you should also define "
+            <<"--"<<flag_argument+"_num_in";
+        }
+        std::string prefix=vm[flag_argument+"_prefix_in"].as<std::string>();
+        int32 num=vm[flag_argument+"_num_in"].as<int32>();
+        for(int32 i=0; i<num; ++i) {
+          references_filenames->push_back(
+              fl::StitchStrings(prefix, i));
+        }
+      }
+    }
+ 
+    this->schedule(boost::bind(
+      &WorkSpace::LoadFileSequenceTask,
+      this,
+      variable_name,
+      *references_filenames));
+  }
+  
+  void WorkSpace::LoadFileSequenceTask(
+      const std::string variable_name,
+      std::vector<std::string> references_filenames) {
+    
+    for(int32 i=0; i<references_filenames.size(); ++i) {
+      LoadDataTableFromFile(fl::StitchStrings(variable_name, i),
+          references_filenames[i]);
+    }
+  }
+
   void WorkSpace::IndexTable(const std::string &variable, 
         const std::string &metric,
         const std::string &metric_args,
@@ -285,6 +328,37 @@ namespace fl { namespace ws {
     global_mutex_.unlock();
   }
 
+  void WorkSpace::ExportToFileSequence(
+        const boost::program_options::variables_map &vm, 
+        const std::string &var_name_prefix, 
+        const std::string &flag_argument, 
+        std::vector<std::string> *file_sequence) {
+ 
+    if (vm.count(flag_argument+"_out")>0) {
+      *file_sequence=
+        fl::SplitString(vm[flag_argument+"_out"].as<std::string>(), ",");    
+    } else {
+      if (vm.count(flag_argument+"_prefix_out")>0) {
+        if (vm.count(flag_argument+"_num_out")==0) {
+          fl::logger->Die()<<"Since you defined flag "
+            <<"--"<<flag_argument+"_prefix_out"
+            <<", you should also define "
+            <<"--"<<flag_argument+"_num_out";
+        }
+        std::string prefix=vm[flag_argument+"_prefix_out"].as<std::string>();
+        int32 num=vm[flag_argument+"_num_out"].as<int32>();
+        for(int32 i=0; i<num; ++i) {
+          file_sequence->push_back(
+              fl::StitchStrings(prefix, i));
+        }
+      }
+    }
+    for(int32 i=0; i<file_sequence->size(); ++i) {
+      std::string name=fl::StitchStrings(var_name_prefix, i);
+      ExportToFile(name, (*file_sequence)[i]);
+    } 
+  }
+
   bool WorkSpace::IsTableAvailable(const std::string &name) {
     global_mutex_.lock();
     bool is_name_in_map=mutex_map_.count(name)==0;
@@ -324,6 +398,12 @@ namespace fl { namespace ws {
 
   }
 
+  void WorkSpace::LoadDataTableFromFileTask(const std::string name,
+      const std::string filename) {
+    LoadFromFile<DataTables_t>(name, filename);
+
+  }
+
   void WorkSpace::LoadParameterTableFromFile(const std::string &name,
       const std::string &filename) {
     LoadFromFile<ParameterTables_t>(name, filename);
@@ -342,6 +422,88 @@ namespace fl { namespace ws {
     global_mutex_.unlock();
   }
 
+  namespace WorkSpace_GetTableInfo {
+    class Do {
+      public:
+        Do(WorkSpace *ws,
+            const std::string &table_name,
+            index_t *n_entries,
+            index_t *n_attributes,
+            std::vector<index_t> *dense_sizes,
+            std::vector<index_t> *sparse_sizes,
+            bool *success) :
+          ws_(ws), table_name_(table_name), n_entries_(n_entries),
+          n_attributes_(n_attributes), dense_sizes_(dense_sizes),
+          sparse_sizes_(sparse_sizes), success_(success) {
+        }
+        template<typename TableType>
+        void operator()(TableType&) {
+          if (*success_==true) {
+            return;
+          }
+          boost::shared_ptr<TableType> table;
+          try {
+            ws_->TryToAttach<TableType>(table_name_);
+            ws_->Attach(table_name_, &table);
+            *success_=true;
+            if (n_entries_!=NULL) {
+              *n_entries_=table->n_entries();
+            }
+            if (n_attributes_!=NULL) {
+              *n_attributes_=table->n_attributes();
+            }
+            if (dense_sizes_!=NULL) {
+              *dense_sizes_=table->dense_sizes();
+            }
+            if (sparse_sizes_!=NULL) {
+              *sparse_sizes_=table->sparse_sizes();
+            }
+          }
+          catch(const fl::TypeException &e) {
+            return; 
+          }
+        }
+      private:
+        WorkSpace *ws_;
+        const std::string &table_name_;
+        index_t *n_entries_;
+        index_t *n_attributes_;
+        std::vector<index_t> *dense_sizes_;
+        std::vector<index_t> *sparse_sizes_;  
+        bool *success_;
+    };
+  }
+  void WorkSpace::GetTableInfo(const std::string &table_name,
+        index_t *n_entries, 
+        index_t *n_attributes,
+        std::vector<index_t> *dense_sizes,
+        std::vector<index_t> *sparse_sizes) {
+    bool success=false;
+    boost::mutex::scoped_lock(global_mutex_);
+    boost::mpl::for_each<DataTables_t>(
+        WorkSpace_GetTableInfo::Do(this,
+          table_name,
+          n_entries,
+          n_attributes,
+          dense_sizes,
+          sparse_sizes,
+          &success));
+    boost::mpl::for_each<ParameterTables_t>(
+        WorkSpace_GetTableInfo::Do(this,
+          table_name,
+          n_entries,
+          n_attributes,
+          dense_sizes,
+          sparse_sizes,
+          &success)
+        ); 
+    if (success==false) {
+      fl::logger->Die()<<"Table ("<<table_name<<")" 
+        "is not the type you requested, It wasn't possible to "
+        "attach it, Type Error"; 
+    }
+  }
+
   void WorkSpace::set_schedule_mode(int schedule_mode) {
     schedule_mode_=schedule_mode;  
     if(schedule_mode == 0) {
@@ -350,7 +512,9 @@ namespace fl { namespace ws {
   }
 
   void WorkSpace::set_pool(int n_threads) {
-    pool_.reset(new boost::threadpool::pool(n_threads));
+    if (schedule_mode_==0) {
+      pool_.reset(new boost::threadpool::pool(n_threads));
+    }
   }
 
   void WorkSpace::DummyThreadCancel(

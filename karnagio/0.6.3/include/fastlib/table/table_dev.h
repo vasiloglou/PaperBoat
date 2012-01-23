@@ -412,13 +412,46 @@ void Table<TemplateMap>::get(index_t point_id, typename Table<TemplateMap>::Poin
   }
 }
 
+namespace table_get {
+  template<typename TableType>
+  struct General {
+    struct type {
+      static void get(TableType *table, 
+          index_t i,
+          index_t j,
+          double *val) {
+        if (i!=table->get_cached_point().first) {
+          table->get(i, table->get_cached_point().second);
+          table->get_cached_point().first=i;
+        }
+        *val=static_cast<double>(table->get_cached_point().second->operator[](j));
+      }
+    };
+  };
+  
+  template<typename TableType>
+  struct Special {
+    struct type {
+      static void get(TableType *table,
+          index_t i,
+          index_t j,
+          double *val) {
+        *val=table->get_point_collection().dense->template get<
+          typename TableType::DenseBasicStorageType_t>().get(j,i);
+      }
+    };
+  };
+}
+
 template<typename TemplateMap>
 double Table<TemplateMap>::get(index_t i, index_t j) {
-  if (i!=cached_point_.first) {
-    this->get(i, cached_point_.second);
-    cached_point_.first=i;
-  }
-  return static_cast<double>(cached_point_.second->operator[](j));
+  double val=0;
+  boost::mpl::eval_if<
+    IsMatrixOnly_t, 
+    table_get::Special<Table_t>,
+    table_get::General<Table_t>
+  >::type::get(this, i, j, &val);
+  return val;  
 }
 
 template<typename TemplateMap>
@@ -479,14 +512,100 @@ void Table<TemplateMap>::get(index_t i, signed char *meta1,
   >::type::Do(cached_point_.second, meta1, meta2, meta3);
 
 }
+
+template<typename TemplateMap>
+std::pair<index_t, typename Table<TemplateMap>::Point_t*> &Table<TemplateMap>::get_cached_point() {
+  return cached_point_;
+}
+
+namespace table_set {
+ template<typename TableType>
+ struct General {
+   struct type {
+     static void set(TableType *table, 
+         index_t i, 
+         index_t j,
+         double val) {
+   
+       if (i!=table->get_cached_point().first) {
+         table->get(i, table->get_cached_point().second);
+         table->get_cached_point().first=i;
+       }
+       table->get_cached_point().second->set(j, 
+           static_cast<typename TableType::CalcPrecision_t>(val));
+     }
+   }; 
+ };
+ 
+ template<typename TableType>
+ struct Special {
+   struct type {
+     static void set(TableType *table, 
+         index_t i, 
+         index_t j,
+         double val) {
+       table->get_point_collection().dense->template get<
+         typename TableType::DenseBasicStorageType_t>().set(j, i, val);
+     }
+   };
+ };
+
+}
 template<typename TemplateMap>
 void Table<TemplateMap>::set(index_t i, index_t j, double value) {
-  if (i!=cached_point_.first) {
-    this->get(i, cached_point_.second);
-    cached_point_.first=i;
-  }
-  cached_point_.second->set(j, static_cast<CalcPrecision_t>(value));
+  boost::mpl::eval_if<
+    IsMatrixOnly_t,
+    table_set::Special<Table_t>,
+    table_set::General<Table_t>
+  >::type::set(this, i, j, value);  
 }
+
+namespace table_set_all {
+  template<typename TableType>
+  struct General {
+    struct type {
+      static void SetAll(TableType *table, double value) {
+        typename TableType::Point_t point;
+        for(index_t i=0; i<table->n_entries(); ++i) {
+          table->get(i, &point);
+          point.SetAll(value);
+        }
+      }
+    };
+  };
+
+  template<typename TableType>
+  struct Special {
+    struct type {
+      static void SetAll(TableType *table, double value) {
+        table->get_point_collection().dense->template get<
+          typename TableType::DenseBasicStorageType_t>().SetAll(value);
+      }
+    };
+  };
+}
+
+template<typename TemplateMap>
+void Table<TemplateMap>::SetAll(double value) {
+  boost::mpl::eval_if<
+    IsMatrixOnly_t,
+    table_set_all::Special<Table_t>,
+    table_set_all::General<Table_t>
+  >::type::SetAll(this, value);
+}
+
+template<typename TemplateMap>
+void Table<TemplateMap>::UpdatePlus(index_t i, index_t j, double value) {
+  double old_value=this->get(i, j);
+  this->set(i, j, old_value+value); 
+}
+
+template<typename TemplateMap>
+void Table<TemplateMap>::UpdateMul(index_t i, index_t j, double value) {
+  double old_value=this->get(i, j);
+  this->set(i, j, old_value*value); 
+}
+
 
 template<typename TemplateMap>
 void Table<TemplateMap>::push_back(std::string &point) {

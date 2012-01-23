@@ -102,13 +102,13 @@ int fl::ml::Svd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<st
    "when doing randomized svd you need to smooth the matrix by "
    "mutliplying it with XX' p times")
   ("lsv_out",
-   boost::program_options::value<std::string>()->default_value("lsv_out"),
+   boost::program_options::value<std::string>(),
    "The output file for the left singular vectors (each column is a singular vector).")
   ("sv_out",
-   boost::program_options::value<std::string>()->default_value("sv_out"),
+   boost::program_options::value<std::string>(),
    "The output file for the singular values.")
   ("rsv_out",
-   boost::program_options::value<std::string>()->default_value("rsv_out"),
+   boost::program_options::value<std::string>(),
    "The output file for the transposed right singular vectors (each row is a singular vector).");
 
 
@@ -116,13 +116,26 @@ int fl::ml::Svd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<st
   boost::program_options::command_line_parser clp(args);
   clp.style(boost::program_options::command_line_style::default_style
             ^ boost::program_options::command_line_style::allow_guessing);
-  boost::program_options::store(clp.options(desc).run(), vm);
+  try {
+    boost::program_options::store(clp.options(desc).run(), vm);
+  }
+  catch(const boost::program_options::invalid_option_value &e) {
+	  fl::logger->Die() << "Invalid Argument: " << e.what();
+  }
+  catch(const boost::program_options::invalid_command_line_syntax &e) {
+	  fl::logger->Die() << "Invalid command line syntax: " << e.what(); 
+  }
+  catch (const boost::program_options::unknown_option &e) {
+     fl::logger->Die() << e.what()
+      <<" . This option will be ignored";
+  }
   boost::program_options::notify(vm);
   if (vm.count("help")) {
     std::cout << fl::DISCLAIMER << "\n";
     std::cout << desc << "\n";
-    return 1;
+    return true;
   }
+
 
   return BranchType::template BranchOnTable < Svd<boost::mpl::void_>,
          WorkSpaceType > (ws, vm);
@@ -150,10 +163,24 @@ int fl::ml::Svd<boost::mpl::void_>::Core<TableType1>::Main(
   boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> right_trans_table;
   boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> sv_table;
 
-
-  std::string lsv_file = vm["lsv_out"].as<std::string>();
-  std::string sv_file  = vm["sv_out"].as<std::string>();
-  std::string rsv_trans_file = vm["rsv_out"].as<std::string>();
+  std::string lsv_file;
+  if (vm.count("lsv_out")) {
+    lsv_file = vm["lsv_out"].as<std::string>();
+  } else {
+    lsv_file=ws->GiveTempVarName();
+  }
+  std::string sv_file;
+  if (vm.count("sv_out")) {
+    sv_file=vm["sv_out"].as<std::string>();
+  } else {
+    sv_file=ws->GiveTempVarName();
+  }
+  std::string rsv_trans_file;
+  if (vm.count("rsv_out")) { 
+    rsv_trans_file=vm["rsv_out"].as<std::string>();
+  } else {
+    rsv_trans_file=ws->GiveTempVarName(); 
+  }
 
   int svd_rank = vm["svd_rank"].as<int>();
   if (svd_rank>references_table->n_attributes()) {

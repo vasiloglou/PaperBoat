@@ -145,6 +145,8 @@ boost::mpl::if_ <
   boost::mpl::bool_<false>
 >::type IsMatrixOnly_t;
 
+typedef typename boost::mpl::front<DenseTypeList_t>::type DenseBasicStorageType_t;
+
 
 typedef typename boost::mpl::if_ <
 boost::mpl::empty<DenseTypeList_t>,

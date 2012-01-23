@@ -27,7 +27,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "default/dense/labeled/kdtree/table.h"
 
 namespace fl { namespace table{
-class MatrixTable : public fl::table::dense::labeled::kdtree::Table {
+typedef fl::table::dense::labeled::kdtree::Table  MatrixTable;
+/*
+  class MatrixTable : public fl::table::dense::labeled::kdtree::Table {
   public:
     typedef fl::table::dense::labeled::kdtree::Table::Point_t Point_t;
     fl::dense::Matrix<double> &get() {
@@ -42,7 +44,7 @@ class MatrixTable : public fl::table::dense::labeled::kdtree::Table {
       return this->get_point_collection().dense->get<double>().get(j,i);
     }
     
-    void get(index_t i, Point_t *p) {
+    void get(index_t i, Point_t *p) const {
       fl::table::dense::labeled::kdtree::Table::get(i, p);
     }
 
@@ -61,5 +63,6 @@ class MatrixTable : public fl::table::dense::labeled::kdtree::Table {
       this->set(i, j, old_value*value);   
     }
 };
+*/
 }}
 #endif

@@ -29,6 +29,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "fastlib/table/branch_on_table.h"
 #include "boost/program_options.hpp"
 #include "fastlib/table/table_defs.h"
+#include "fastlib/table/matrix_table.h"
 #include "fastlib/table/default/categorical/labeled/balltree/table.h"
 #include "fastlib/table/default/dense/labeled/balltree/table.h"
 #include "fastlib/table/default/dense/labeled/kdtree/table.h"

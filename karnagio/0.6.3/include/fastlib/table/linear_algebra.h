@@ -255,8 +255,10 @@ namespace fl {namespace table {
       }
     }
     success_t success_flag;
-    fl::dense::ops::QR<fl::la::Overwrite, fl::la::Trans>(table_in.get(), 
-        &(q_table->get()), &(r_table->get()), &success_flag); 
+    fl::dense::ops::QR<fl::la::Overwrite, fl::la::Trans>(
+        table_in.get_point_collection().dense->get<double>(), 
+        &(q_table->get_point_collection().dense->get<double>()), 
+        &(r_table->get_point_collection().dense->get<double>()), &success_flag); 
     if (success_flag!=SUCCESS_PASS) {
       fl::logger->Warning()<<"There was an error in LAPACK QR computation, "
         "problem unstable"<<std::endl;
@@ -318,13 +320,18 @@ namespace fl {namespace table {
     if (table_in.n_entries()<table_in.n_attributes()) {
       fl::dense::Matrix<double> temp_right;
       temp_right.Init(table_in.n_attributes(), table_in.n_entries());
-      fl::dense::ops::SVD<fl::la::Overwrite, fl::la::NoTrans>(table_in.get(), &(sv->get()), 
-         &temp_right, &(left->get()), &success_flag);
+      fl::dense::ops::SVD<fl::la::Overwrite, fl::la::NoTrans>(
+          table_in.get_point_collection().dense->get<double>(), 
+          &(sv->get_point_collection().dense->get<double>()), 
+         &temp_right, &(left->get_point_collection().dense->get<double>()), &success_flag);
        fl::dense::ops::Transpose<fl::la::Overwrite>(
-           temp_right, &(right_trans->get()));      
+           temp_right, &(right_trans->get_point_collection().dense->get<double>()));      
     } else {
-       fl::dense::ops::SVD<fl::la::Overwrite, fl::la::Trans>(table_in.get(), &(sv->get()), 
-          &(left->get()), &(right_trans->get()), &success_flag);
+       fl::dense::ops::SVD<fl::la::Overwrite, fl::la::Trans>(
+           table_in.get_point_collection().dense->get<double>(), 
+           &(sv->get_point_collection().dense->get<double>()), 
+          &(left->get_point_collection().dense->get<double>()), 
+          &(right_trans->get_point_collection().dense->get<double>()), &success_flag);
     }
     if (success_flag!=SUCCESS_PASS) {
       fl::logger->Warning()<<"There was an error in LAPACK SVD computation, "

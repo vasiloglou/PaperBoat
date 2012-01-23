@@ -69,9 +69,8 @@ class WorkSpace : boost::noncopyable {
     class TableVector : public fl::table::TableVector<PrecisionType> {
     };
     
-    typedef boost::mpl::vector10<
+    typedef boost::mpl::vector9<
       DefaultTable_t,
-      MatrixTable_t,
       DefaultSparseIntTable_t,
       DefaultSparseDoubleTable_t,
       UIntegerTable_t,
@@ -123,6 +122,15 @@ class WorkSpace : boost::noncopyable {
      */
     void LoadDataTableFromFile(const std::string &name,
       const std::string &filename);
+
+    /**
+     * @brief this is exactly like the previous one, with the 
+     *        only difference that it makes a copy of the arguments
+     *        so that it can be scheduled as a task
+     */
+    void LoadDataTableFromFileTask(const std::string name,
+      const std::string filename);
+
     /**
      * @brief loads a data table to the workspace. You should use
      *         this one for parameter tables
@@ -147,6 +155,13 @@ class WorkSpace : boost::noncopyable {
       const std::string &flag_argument, 
       const std::string &variable_name, 
       std::vector<std::string> *references_filenames);
+    
+    /**
+     *  @brief This is a task that is called by the previous function
+     */
+    void LoadFileSequenceTask( 
+      const std::string variable_name, 
+      std::vector<std::string> references_filenames);
 
     /**
      * @brief this function indexes a table in place. It mutates the table.
@@ -179,7 +194,7 @@ class WorkSpace : boost::noncopyable {
         const boost::program_options::variables_map &vm, 
         const std::string &var_name_prefix, 
         const std::string &flag_argument, 
-        const std::vector<std::string> *file_sequence);
+        std::vector<std::string> *file_sequence);
     /**
      * @brief This function returns immediately. All it does is to check
      *        if the table exists and if it does it checks if it is ready
@@ -216,6 +231,12 @@ class WorkSpace : boost::noncopyable {
     template<typename TableType1, typename TableType2>
     void CopyAndDestruct(boost::shared_ptr<TableType1> table1,
         boost::shared_ptr<TableType2> *table2);
+
+    void GetTableInfo(const std::string &table_name,
+        index_t *n_entries, 
+        index_t *n_attributes,
+        std::vector<index_t> *dense_sizes,
+        std::vector<index_t> *sparse_sizes);
 
     void schedule(boost::threadpool::task_func const &task);
     /**
