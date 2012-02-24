@@ -45,15 +45,14 @@ namespace fl{ namespace ws {
       }
       Task() {
       }
+      ~Task() {
+      }
       void operator()() {
         try{
           ExecutorPtr(data_, args_);
         }
-        catch(const fl::Exception &e) {
-          fl::global_exception=boost::current_exception();
-          data_->CancelAllTasks();
-        }  
-        catch(const boost::thread_interrupted &e) {
+        catch(...) {
+          boost::mutex::scoped_lock lock(*global_exception_mutex);
           fl::global_exception=boost::current_exception();
         }
       }

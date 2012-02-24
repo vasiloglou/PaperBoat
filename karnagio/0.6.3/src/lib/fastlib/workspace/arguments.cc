@@ -46,8 +46,10 @@ POSSIBILITY OF SUCH DAMAGE.
        std::string new_tok("--");
        new_tok.append(option_part[0].substr(
              tok.size(), std::string::npos));
-       new_tok.append("=");
-       new_tok.append(option_part[1]);
+       if (option_part.size()==2) {
+         new_tok.append("=");
+         new_tok.append(option_part[1]);
+       }
        result.push_back(new_tok);
      }
    }

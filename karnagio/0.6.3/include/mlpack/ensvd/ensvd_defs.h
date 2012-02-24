@@ -159,7 +159,8 @@ int fl::ml::EnSvd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<
   // orthonormalize 
   fl::logger->Message()<<"Orthonormalizing/Aggrating"<<std::endl;
   fl::ws::Arguments svd_args;
-  svd_args.Add(fl::ws::MakeArgsFromPrefix(args, "svd"));
+  // svd_args.Add(fl::ws::MakeArgsFromPrefix(args, "svd"));
+  svd_args.Add("algorithm", "covariance");
   svd_args.Add("references_in", "concat_rsv");
   svd_args.Add("rsv_out", "rsv");
   svd_args.Add("sv_out", "sv");
@@ -236,12 +237,8 @@ void fl::ml::EnSvd<boost::mpl::void_>::Project<WorkSpaceType>::operator()(TableT
                references_table->sparse_sizes(), 
                references_table->n_entries(),
                &lsv_table);
-    fl::table::Mul<fl::la::NoTrans, fl::la::Trans>(
-        *references_table,
-        *rsv_table, 
-        lsv_table.get());
-    ws_->Purge(lsv_out[i]);
-    ws_->Detach(lsv_out[i]);
+    ws_->schedule(boost::bind(&EnSvd<boost::mpl::void_>::Project<WorkSpaceType>::MulTask<TableType>,
+          ws_, lsv_out[i], references_table, rsv_table, lsv_table));
   }
 }
 
@@ -250,6 +247,23 @@ fl::ml::EnSvd<boost::mpl::void_>::Project<WorkSpaceType>::Project(
     WorkSpaceType *ws,
     const boost::program_options::variables_map &vm) :
   ws_(ws), vm_(vm) {}
+
+template<typename WorkSpaceType>
+template<typename TableType>
+void fl::ml::EnSvd<boost::mpl::void_>::Project<WorkSpaceType>::MulTask(
+    WorkSpaceType *ws,
+    const std::string lsv_name,
+    boost::shared_ptr<TableType> references_table,
+    boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> rsv_table,
+    boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> lsv_table) {
+
+  fl::table::Mul<fl::la::NoTrans, fl::la::Trans>(
+      *references_table,
+      *rsv_table, 
+      lsv_table.get());
+  ws->Purge(lsv_name);
+  ws->Detach(lsv_name);
+}
 
 #endif
 

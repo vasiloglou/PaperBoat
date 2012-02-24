@@ -55,6 +55,11 @@ inline std::vector<std::string> SplitString(const std::string &input,
     const std::string &delimeter) {
   std::vector<std::string> tokens;
   boost::algorithm::split(tokens, input, boost::algorithm::is_any_of(delimeter));
+  if (tokens.size()==1) {
+    if (tokens[0]=="") {
+      tokens.clear();
+    }
+  }
   return tokens;
 }
 

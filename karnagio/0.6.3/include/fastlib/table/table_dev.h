@@ -180,8 +180,9 @@ void Table<TemplateMap>::CloneDataOnly(Table<TemplateMap> *table) {
       this->dense_sizes(), 
       this->sparse_sizes(),
       this->n_entries());
-  Point_t p1, p2;
+  table->labels()=this->labels();
   for(index_t i=0; i<this->n_entries(); ++i) {
+    Point_t p1, p2;
     this->get(i, &p1);
     table->get(i, &p2);
     p2.CopyValues(p1);
@@ -195,6 +196,106 @@ void Table<TemplateMap>::Append(Table<TemplateMap> &table) {
     table.get(i, &point);
     this->push_back(point);
   }
+}
+
+template<typename TemplateMap>
+std::vector<index_t> Table<TemplateMap>::RedundantCategoricals() {
+  std::vector<index_t> red_features;
+  Point_t point;
+  const std::vector<std::string> &labels=this->labels();
+  std::map<std::string, std::pair<index_t, index_t> > categorical_ranges;
+  for(index_t i=0; i<labels.size(); ++i) {
+    if (fl::StringStartsWith(labels[i], "cat:")) {
+      std::vector<std::string> tokens=fl::SplitString(labels[i], ":");
+      if (tokens.size()<3) {
+        fl::logger->Die()<<"Categorical labels/attribute_names must be of the "
+          "form cat:var_name:number";
+      }
+      const std::string var_name=tokens[1];
+      if (categorical_ranges.count(var_name)) {
+        if (i>=categorical_ranges[var_name].second) {
+          categorical_ranges[var_name].second=i;
+        }
+      } else {
+        categorical_ranges[var_name].first=i;
+        categorical_ranges[var_name].second=i+1;
+      }
+    }
+  }
+  std::list<std::pair<index_t, double> > active_columns;
+  this->get(0, &point);
+  for(std::map<std::string, std::pair<index_t, index_t> >::iterator it=categorical_ranges.begin();
+      it!=categorical_ranges.end(); ++it) {
+    for(index_t i=it->second.first; i!=it->second.second; ++i) {
+      active_columns.push_back(
+          std::make_pair(i, point[i]));
+    }
+  }
+  // remove all the columns that all have the same value
+  for(index_t i=0; i<this->n_entries(); ++i) {
+    if (active_columns.empty()) {
+      break;
+    } 
+    this->get(i, &point);
+    for(std::list<std::pair<index_t, double> >::iterator it=active_columns.begin();
+        it!=active_columns.end(); ++it) {
+      if (point[it->first]!=it->second) {
+        it=active_columns.erase(it);
+      } 
+    }
+  }
+  std::set<index_t> deleted_columns;
+  for(std::list<std::pair<index_t, double> >::iterator it=active_columns.begin();
+        it!=active_columns.end(); ++it) {
+    deleted_columns.insert(it->first);
+  }
+
+  // check if we have a point with all columns zeros
+  // if we don't have one, then we should remove a column
+  bool all_zero_col=true;
+  std::map<std::string, bool> extra_col;
+  for(index_t i=0; i<this->n_entries(); ++i) {
+    this->get(i, &point);
+    std::map<std::string, std::pair<index_t, index_t> >::iterator it;
+    for(it=categorical_ranges.begin();
+        it!=categorical_ranges.end(); ++it) {
+      for(index_t i=it->second.first; i!=it->second.second; ++i) {   
+        if (deleted_columns.count(i)!=0) {
+          continue;
+        }
+        if (point[i]!=0) {
+          all_zero_col=false;
+          break;
+        }
+      }
+      if (all_zero_col==true) {
+        extra_col[it->first]=true;
+        break;
+      }
+    }
+  }
+  for(std::map<std::string, std::pair<index_t, index_t> >::iterator it=categorical_ranges.begin();
+        it!=categorical_ranges.end(); ++it) {
+    for(index_t i=it->second.first; i!=it->second.second; ++i) {
+      if (deleted_columns.count(i)) {
+        red_features.push_back(i);
+      }
+    }
+    if (extra_col[it->first]==false) {
+      index_t k=1;
+      while(true) {
+        if (deleted_columns.count(it->second.second-k)==0) {
+          red_features.push_back(it->second.second-k);
+          break;
+        }
+        if (it->second.second-k==it->second.first) {
+          break;
+        }
+        k++;
+      }
+    }
+  }
+  return red_features;
 }
 
 template<typename TemplateMap>
@@ -331,6 +432,7 @@ std::vector<boost::shared_ptr<Table<TemplateMap> > > Table<TemplateMap>::Split(i
         this->dense_sizes(),
         this->sparse_sizes(), 
         0);
+    new_tables[i]->labels()=this->labels();
   }  
 
   if (random_method=="random_unique") {
@@ -385,6 +487,16 @@ const typename Table<TemplateMap>::Dataset_t *Table<TemplateMap>::data() const  
 template<typename TemplateMap>
 const std::string &Table<TemplateMap>::filename() const  {
   return filename_;
+}
+
+template<typename TemplateMap>
+const std::vector<std::string> &Table<TemplateMap>::labels() const {
+  return data_->labels();
+}
+
+template<typename TemplateMap>
+std::vector<std::string> &Table<TemplateMap>::labels() {
+  return data_->labels();
 }
 
 template<typename TemplateMap>

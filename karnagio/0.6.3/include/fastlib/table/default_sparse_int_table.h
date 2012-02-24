@@ -42,6 +42,9 @@ namespace table {
     struct DatasetArgs : public fl::data::DatasetArgs {
       typedef boost::mpl::vector<> DenseTypes;
       typedef boost::mpl::vector1<int> SparseTypes;
+      typedef fl::MakeIntIndexedStruct <
+      boost::mpl::vector3<signed char, double, int>
+      >::Generated MetaDataType;
       typedef double CalcPrecision;
       typedef fl::data::DatasetArgs::Extendable StorageType;
     }; 

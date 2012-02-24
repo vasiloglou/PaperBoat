@@ -573,7 +573,29 @@ class SparsePoint {
     template<typename PrecisionType, typename MixedPointArgs>
     static double Dot(const fl::data::SparsePoint<PrecisionType> &x,
                       const fl::data::MixedPoint<MixedPointArgs> &y); 
-    
+        
+    template<typename ResultMatrixType>
+    void UpdateSefOuterProd(
+        ResultMatrixType *result) const;
+
+    template<typename ResultMatrixType>
+    void UpdateSefOuterProd(
+        index_t offset,
+        ResultMatrixType *result) const;
+
+
+    template<typename ResultMatrixType, 
+             typename PrecisionType>
+    void UpdateOuterProd(
+        const fl::data::SparsePoint<PrecisionType> &x,
+        ResultMatrixType *result) const;
+ 
+    template<typename ResultMatrixType,
+             typename MixedPointArgsType>
+    void UpdateOuterProd(
+        const fl::data::MixedPoint<MixedPointArgsType> &x,
+        ResultMatrixType *result) const;
+
     static CalcPrecisionType DistanceSq(
       const SparsePoint<CalcPrecisionType> &a,
       const SparsePoint<CalcPrecisionType> &b);

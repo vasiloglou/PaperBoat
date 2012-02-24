@@ -433,30 +433,43 @@ void LinearRegressionModel<TableType, do_naive_least_squares>::Export(
   TableType2 *sigma_table) const {
 
   // Create the table for dumping the coefficients.
-
-  ExportHelper_(coefficients_, *coefficients_table);
-
+  if (coefficients_table!=NULL) {
+    ExportHelper_(coefficients_, *coefficients_table);
+  }
   // Create the table for dumping the standard errors.
-  ExportHelper_(standard_errors_, *standard_errors_table);
+  if (standard_errors_table!=NULL) {
+    ExportHelper_(standard_errors_, *standard_errors_table);
+  }
 
   // Create the tables for dumping the confidence intervals.
-  ExportHelper_(confidence_interval_los_, *confidence_interval_los_table);
+  if (confidence_interval_los_table!=NULL) {
+    ExportHelper_(confidence_interval_los_, *confidence_interval_los_table);
+  }
 
-  ExportHelper_(confidence_interval_his_, *confidence_interval_his_table);
-
+  if (confidence_interval_his_table!=NULL) {
+    ExportHelper_(confidence_interval_his_, *confidence_interval_his_table);
+  }
   // Create the table for dumping the t-statistic values.
-
-  ExportHelper_(t_statistics_, *t_statistics_table);
-
+  if (t_statistics_table!=NULL) {
+    ExportHelper_(t_statistics_, *t_statistics_table);
+  }
   // Create the table for p-values.
-
-  ExportHelper_(p_values_, *p_values_table);
-
+  if (p_values_table!=NULL) {
+    ExportHelper_(p_values_, *p_values_table);
+  }
   // Create the table for adjusted r-square statistic.
-  adjusted_r_squared_table->set(0, adjusted_r_squared_);
-  f_statistic_table->set(0, f_statistic_);
-  r_squared_table->set(0, r_squared_);
-  sigma_table->set(0, sigma_);
+  if (adjusted_r_squared_table!=NULL) {
+    adjusted_r_squared_table->set(0, adjusted_r_squared_);
+  }
+  if (f_statistic_table!=NULL) {
+    f_statistic_table->set(0, f_statistic_);
+  }
+  if (r_squared_table!=NULL) {
+    r_squared_table->set(0, r_squared_);
+  }
+  if (sigma_table!=NULL) {
+    sigma_table->set(0, sigma_);
+  }
 }
 
 template<typename TableType, bool do_naive_least_squares>

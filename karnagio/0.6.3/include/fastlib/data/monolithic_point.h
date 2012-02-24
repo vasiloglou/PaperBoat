@@ -259,7 +259,19 @@ class MonolithicPoint :
         set(i, fl::math::Random(low, hi));
       }
     }
-
+    
+    /**
+     * Loading a sparse point
+     * This method assumes that the indices
+     * between it1 and it2 are in ascending order
+     */
+    template<typename IteratorType>
+    void Load(const IteratorType &it1, const IteratorType &it2) {
+      this->SetAll(0.0);
+      for(IteratorType it=it1; it!=it2; ++it) {
+        set(it->first, it->second);
+      }
+    }
     template<typename PointType1, typename PointType2>
     struct CopyValuesOperatorsDense {
      public:
@@ -348,9 +360,177 @@ private:
                                       const MonolithicPoint<CalcPrecision_t> &y) {
       return fl::dense::ops::Dot(x, y);
     }
+
     static inline double Dot(const fl::dense::Matrix<CalcPrecision_t, true> &x,
                                       const fl::dense::Matrix<CalcPrecision_t, true> &y) {
       return fl::dense::ops::Dot(x, y);
+    }
+
+    /**
+     *  @brief the outer product between two points V x P
+     */
+    template<typename ResultMatrixType>
+    void UpdateOuterProd(const MonolithicPoint<CalcPrecision_t> &x,
+                          ResultMatrixType *res) const {
+      for(index_t i=0; i<this->size(); ++i) {
+        for(index_t j=0; j<x.size(); ++j) {
+          res->set(i, j, res->get(i,j)
+              +this->operator[](i)*static_cast<double>(x[j]));
+        }
+      }
+    }
+
+    /**
+     *  @brief the outer product between two points
+     *         the only difference is that we add an offset
+     *         on the second point
+     */
+    template<typename ResultMatrixType>
+    void UpdateOuterProd(const MonolithicPoint<CalcPrecision_t> &x,
+                         index_t offset,
+                         ResultMatrixType *res) const {
+      for(index_t i=0; i<this->size(); ++i) {
+        for(index_t j=0; j<x.size(); ++j) {
+          res->set(i, j+offset, res->get(i, j+offset)
+              +this->operator[](i)*static_cast<double>(x[j]));
+        }
+      }
+    }
+
+    /**
+     *  @brief the outer product between this point and its self
+     */
+    template<typename ResultMatrixType>
+    void UpdateSelfOuterProd(ResultMatrixType *res) const {
+      UpdateSelfOuterProd(res, 0);
+    }
+    template<typename ResultMatrixType>
+    void UpdateSelfOuterProd(ResultMatrixType *res,
+        index_t offset) const {
+      for(index_t i=0; i<this->size(); ++i) {
+        for(index_t j=0; j<i; ++j) {
+          double val=this->operator[](i) * 
+            static_cast<double>(this->operator[](j));
+          res->set(i+offset, 
+                   j+offset, 
+                   res->get(i+offset, j+offset)+val);
+          res->set(j+offset, 
+                   i+offset, 
+                   res->get(j+offset, i+offset)+val);
+
+        }
+      }
+      for(index_t i=0; i<this->size(); ++i) {
+        double val=this->operator[](i)* 
+          static_cast<double>(this->operator[](i));
+          res->set(i+offset, 
+                   i+offset, 
+                   res->get(i+offset, i+offset)+val);
+
+      }
+    }
+
+    /**
+     *  @brief the outer product between a monolithic point and a sparse one
+     */
+    template<typename ResultMatrixType, typename PrecisionType2>
+    void UpdateOuterProd(const SparsePoint<PrecisionType2> &x,
+                          ResultMatrixType *res) const {
+      typedef fl::data::SparsePoint<PrecisionType2> SparsePoint_t;
+      typename SparsePoint_t::Container_t::iterator it;
+      for(it=x.begin(); it!=x.end(); ++it) {
+        for(index_t i=0; i<this->size(); ++i) {
+          res->set(i, it->first(),
+              res->get(i, it->first)
+              +this->operator[](i)*static_cast<double>(it->second));
+        }
+      }
+    }
+    
+    /**
+     *  @brief we introduce an outer product between a monolithic point
+     *         and a sparse one
+     */
+    template<typename ResultMatrixType,
+             typename PointType1, 
+             typename PointType2>
+    struct UpdateOuterProdOperatorsDense {
+      public:
+        UpdateOuterProdOperatorsDense(
+            const PointType1 &x, 
+            const PointType2 &y,
+            ResultMatrixType *result,
+            index_t *current_index) :
+            x_(x), y_(y), result_(result), ind_(current_index) {
+        }
+
+        template<typename T>
+        void operator()(T) {
+          PointType1 temp;
+          x_.UpdateOuterProject(
+              y_.template dense_point<T>(),
+              ind_,
+              result_);
+          *ind_ += y_.template dense_point<T>().size();
+        } 
+
+      private:
+        const PointType1 &x_;
+        const PointType2 &y_;
+        index_t *ind_;
+        ResultMatrixType *result_;
+    };
+
+    template<typename ResultMatrixType,
+             typename PointType1, 
+             typename PointType2>
+    struct UpdateOuterProdOperatorsSparse {
+      public:
+        UpdateOuterProdOperatorsSparse(
+            const PointType1 &x, 
+            const PointType2 &y,
+            ResultMatrixType *result,
+            index_t *current_index) :
+            x_(x), y_(y), result_(result), ind_(current_index) {
+        }
+
+        template<typename T>
+        void operator()(T) {
+          PointType1 temp;
+          x_.UpdateOuterProject(
+              y_.template sparse_point<T>(),
+              ind_,
+              result_);
+          *ind_ += y_.template sparse_point<T>().size();
+        } 
+
+      private:
+        const PointType1 &x_;
+        const PointType2 &y_;
+        index_t *ind_;
+        ResultMatrixType *result_;
+    };
+
+    template<typename ResultMatrixType, typename MixedPointArgs>
+    void UpdateOuterProd(
+        const fl::data::MixedPoint<MixedPointArgs> &x,
+        ResultMatrixType *result) const {
+
+      typedef MixedPoint<MixedPointArgs> MixedPoint_t; 
+      typedef typename MixedPoint_t::DenseTypes_t  DenseTypes_t;
+      typedef typename MixedPoint_t::SparseTypes_t SparseTypes_t;
+      index_t current_index=0;
+      boost::mpl::for_each<DenseTypes_t>(
+        UpdateOuterProdOperatorsDense<
+            ResultMatrixType,
+            MonolithicPoint<CalcPrecision_t>, 
+            MixedPoint_t>(*this, x, result, &current_index));
+      boost::mpl::for_each<SparseTypes_t>(
+        UpdateOuterProdOperatorsSparse<
+            ResultMatrixType,
+            MonolithicPoint<CalcPrecision_t>, 
+            MixedPoint_t>(*this, x, result, &current_index));
+    
     }
 
     /**
@@ -371,7 +551,7 @@ private:
           result += x[it2->first];
         }
         else {
-          result += x[it2->first] * it2->second;
+          result += x[it2->first] * static_cast<double>(it2->second);
         }
 
         ++it2;

@@ -444,6 +444,23 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
     prediction_index_prefix,
     &predictor_indices, &prune_predictor_indices,
     &prune_predictor_feature_names, &prediction_index);
+  if (vm.count("check_columns")) {
+    if (vm["check_columns"].as<bool>()) {
+      std::vector<index_t> red_features=reference_table->RedundantCategoricals();
+      std::cout<<red_features.size()<<":";
+      for(size_t i=0; i<red_features.size(); ++i) {
+        std::cout<<red_features[i]<<",";
+      }
+      std::cout<<std::endl;
+      for(std::vector<index_t>::const_iterator it=red_features.begin();
+            it!=red_features.end(); ++it) {
+        std::deque<int>::iterator it1;
+        it1=std::find(predictor_indices.begin(),
+            predictor_indices.end(), *it);
+        predictor_indices.erase(it1); 
+      }
+    }
+  }
 /*
   fl::logger->Message() << "Indices for predictors";
   for (int i = 0; i < predictor_indices.size(); i++) {
@@ -505,6 +522,7 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
       && vm["ineq_nnls"].as<bool>()==false
       && vm["ineq_ldp"].as<bool>()==false
       && vm["ineq_lsi"].as<bool>()==false) {
+    fl::logger->Message()<<"Simple Linear Regression Chosen"<<std::endl;
     initial_model.set_active_right_hand_side_column_index(prediction_index);
     initial_model.Solve(); 
     // Compute the standard errors, etc.
@@ -732,7 +750,9 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
       initial_model.ComputeModelStatistics(stepwise_result);
     }
   } 
+  fl::logger->Message()<<"All regressions are done"<<std::endl;
   // Export the result.
+  fl::logger->Message()<<"Exporting the results"<<std::endl;
   boost::shared_ptr<typename DataAccessType::template TableVector<double> > coefficients_table,
   standard_errors_table, confidence_interval_los_table,
   confidence_interval_his_table, t_statistics_table, p_values_table,
@@ -756,104 +776,122 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
     }
   }
   try {
-    data->Attach(vm["coeffs_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 num_of_coeff,
-                 &coefficients_table);
+    if (vm.count("coeffs_out")) {
+      data->Attach(vm["coeffs_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   num_of_coeff,
+                   &coefficients_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --coeffs_out must be set to a string";
   }
 
   try {
-    data->Attach(vm["standard_errors_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 num_of_coeff,
-                 &standard_errors_table);
-
+    if (vm.count("standard_errors_out")) {
+      data->Attach(vm["standard_errors_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   num_of_coeff,
+                   &standard_errors_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --standard_errors_out must be set to a string";
   }
   try {
-    data->Attach(vm["conf_los_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 num_of_coeff,
-                 &confidence_interval_los_table);
+    if (vm.count("conf_los_out")) {
+      data->Attach(vm["conf_los_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   num_of_coeff,
+                   &confidence_interval_los_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --conf_los_out must be set to a string";
   }
   try {
-    data->Attach(vm["conf_his_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 num_of_coeff,
-                 &confidence_interval_his_table);
+    if (vm.count("conf_his_out")) {
+      data->Attach(vm["conf_his_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   num_of_coeff,
+                   &confidence_interval_his_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --oputput_conf_his must be set to a string";
   }
   try {
-    data->Attach(vm["t_values_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 num_of_coeff,
-                 &t_statistics_table);
+    if (vm.count("t_values_out")) {
+      data->Attach(vm["t_values_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   num_of_coeff,
+                   &t_statistics_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --t_values_out must be set to a string";
   }
   try {
-    data->Attach(vm["p_values_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 num_of_coeff,
-                 &p_values_table);
+    if (vm.count("p_values_out")) {
+      data->Attach(vm["p_values_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   num_of_coeff,
+                   &p_values_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --p_values_out must be set to a string";
   }
   try {
-    data->Attach(vm["adjusted_r_squared_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 1,
-                 &adjusted_r_squared_table);
+    if (vm.count("adjusted_r_squared_out")) {
+      data->Attach(vm["adjusted_r_squared_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   1,
+                   &adjusted_r_squared_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --adjusted_r_squared_out must be set to a string";
   }
   try {
-    data->Attach(vm["f_statistic_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 1,
-                 &f_statistic_table);
+    if (vm.count("f_statistic_out")) {
+      data->Attach(vm["f_statistic_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   1,
+                   &f_statistic_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --f_statistic_out must be set to a string";
   }
   try {
-    data->Attach(vm["r_squared_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 1,
-                 &r_squared_table);
+    if (vm.count("r_squared_out")) {
+      data->Attach(vm["r_squared_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   1,
+                   &r_squared_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
-    fl::logger->Die() << "Flag --r_squared_outw must be set to a string";
+    fl::logger->Die() << "Flag --r_squared_out must be set to a string";
   }
   try {
-    data->Attach(vm["sigma_out"].as<std::string>(),
-                 std::vector<index_t>(1, 1),
-                 std::vector<index_t>(),
-                 1,
-                 &sigma_table);
-
+    if (vm.count("sigma_out")) {
+      data->Attach(vm["sigma_out"].as<std::string>(),
+                   std::vector<index_t>(1, 1),
+                   std::vector<index_t>(),
+                   1,
+                   &sigma_table);
+    }
   }
   catch (const boost::bad_lexical_cast &e) {
     fl::logger->Die() << "Flag --sigma_out must be set to a string";
@@ -899,28 +937,58 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
 
   }
 
-  data->Purge(vm["coeffs_out"].as<std::string>());
-  data->Purge(vm["standard_errors_out"].as<std::string>());
-  data->Purge(vm["conf_los_out"].as<std::string>());
-  data->Purge(vm["conf_his_out"].as<std::string>());
-  data->Purge(vm["t_values_out"].as<std::string>());
-  data->Purge(vm["p_values_out"].as<std::string>());
-  data->Purge(vm["adjusted_r_squared_out"].as<std::string>());
-  data->Purge(vm["f_statistic_out"].as<std::string>());
-  data->Purge(vm["r_squared_out"].as<std::string>());
-  data->Purge(vm["sigma_out"].as<std::string>());
+  if (vm.count("coeffs_out")) {
+    data->Purge(vm["coeffs_out"].as<std::string>());
+    data->Detach(vm["coeffs_out"].as<std::string>());
+  }
   
-  data->Detach(vm["coeffs_out"].as<std::string>());
-  data->Detach(vm["standard_errors_out"].as<std::string>());
-  data->Detach(vm["conf_los_out"].as<std::string>());
-  data->Detach(vm["conf_his_out"].as<std::string>());
-  data->Detach(vm["t_values_out"].as<std::string>());
-  data->Detach(vm["p_values_out"].as<std::string>());
-  data->Detach(vm["adjusted_r_squared_out"].as<std::string>());
-  data->Detach(vm["f_statistic_out"].as<std::string>());
-  data->Detach(vm["r_squared_out"].as<std::string>());
-  data->Detach(vm["sigma_out"].as<std::string>());
+  if (vm.count("standard_errors_out")) {
+    data->Purge(vm["standard_errors_out"].as<std::string>());
+    data->Detach(vm["standard_errors_out"].as<std::string>());
+  }
 
+  if (vm.count("conf_los_out")) {
+    data->Purge(vm["conf_los_out"].as<std::string>());
+    data->Detach(vm["conf_los_out"].as<std::string>());
+  }
+
+  if (vm.count("conf_his_out")) {
+    data->Purge(vm["conf_his_out"].as<std::string>());
+    data->Detach(vm["conf_his_out"].as<std::string>());
+  }
+
+  if (vm.count("t_values_out")) {
+    data->Purge(vm["t_values_out"].as<std::string>());
+    data->Detach(vm["t_values_out"].as<std::string>());
+  }
+
+  if (vm.count("p_values_out")) { 
+    data->Purge(vm["p_values_out"].as<std::string>());
+    data->Detach(vm["p_values_out"].as<std::string>());
+  }
+
+  if (vm.count("adjusted_r_squared_out")) {
+    data->Purge(vm["adjusted_r_squared_out"].as<std::string>());
+    data->Detach(vm["adjusted_r_squared_out"].as<std::string>());
+  }
+
+  if (vm.count("f_statistic_out")) {
+    data->Purge(vm["f_statistic_out"].as<std::string>());
+    data->Detach(vm["f_statistic_out"].as<std::string>());
+  }
+
+  if (vm.count("r_squared_out")) {
+    data->Purge(vm["r_squared_out"].as<std::string>());
+    data->Detach(vm["r_squared_out"].as<std::string>());
+  }
+
+
+  if (vm.count("sigma_out")) {
+    data->Purge(vm["sigma_out"].as<std::string>());
+    data->Detach(vm["sigma_out"].as<std::string>());
+  }
+
+  fl::logger->Message()<<"Done exporting"<<std::endl;
   return 0;
 }
 
@@ -972,8 +1040,10 @@ bool fl::ml::LinearRegression<boost::mpl::void_>::ConstructBoostVariableMap(
   ("references_in", 
    boost::program_options::value<std::string>(),
    "data file containing the predictors and the predictions"
-  )
-  ("remove_index_prefixes",
+  )("check_columns",
+    boost::program_options::value<bool>()->default_value(false),
+    "checks if a column has all the same value. It removes it from the regression"
+  )("remove_index_prefixes",
    boost::program_options::value< std::vector< std::string> >(),
    "The list of strings, each of which denotes the prefix that should be"
    " removed from the consideration of predictor set. We remove one "
@@ -1038,41 +1108,41 @@ bool fl::ml::LinearRegression<boost::mpl::void_>::ConstructBoostVariableMap(
    "The index position of the bias term if present in the input coefficients."
   )
   ("coeffs_out",
-   boost::program_options::value<std::string>()->default_value("coefficients.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the coefficients")
   ("standard_errors_out",
-   boost::program_options::value<std::string>()->default_value("standard_errors.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the standard errors"
   )
   ("conf_los_out",
-   boost::program_options::value<std::string>()->default_value("conf_los.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the lower bound for the confidence intervals"
   )
   ("conf_his_out",
-   boost::program_options::value<std::string>()->default_value("conf_his.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the upper bound for the confidence intervals"
   )
   ("t_values_out",
-   boost::program_options::value<std::string>()->default_value("t_values.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the t values"
   )
   ("p_values_out", 
-   boost::program_options::value<std::string>()->default_value("p_values.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the p values"
   )
   ("adjusted_r_squared_out",
-   boost::program_options::value<std::string>()->default_value("adjusted_r_squared.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the adjusted r-squared value"
   )
   ("f_statistic_out",
-   boost::program_options::value<std::string>()->default_value("f_statistic"),
+   boost::program_options::value<std::string>(),
    "The output file for the f-statistics")
   ("r_squared_out",
-   boost::program_options::value<std::string>()->default_value("r_squared.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the r-squared value"
   )
   ("sigma_out",
-   boost::program_options::value<std::string>()->default_value("sigma.txt"),
+   boost::program_options::value<std::string>(),
    "The output file for the sigma"
   )
   ("correlation_threshold",

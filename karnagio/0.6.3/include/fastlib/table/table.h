@@ -206,6 +206,15 @@ class Table : boost::noncopyable {
     void Append(Table_t &table);
     template<typename IndexArgsType>
     void SplitNode(IndexArgsType &args, Tree_t *node);
+    /**
+     *  @brief If there are categorical labels in the table, 
+     *  this function will make a check and return an index with 
+     *  the attributes that have to be eliminated so that 
+     *  there are not linear dependency problems. Each categorical
+     *  label starts with cat: prefix. For example
+     *  cat:date:1 cat:date:2 cat:date:3 ...  
+     */
+    std::vector<index_t> RedundantCategoricals();
 
     template<typename IndexArgsType>
     void IndexData(IndexArgsType &args);
@@ -240,6 +249,8 @@ class Table : boost::noncopyable {
     const Dataset_t *data() const ;
     const std::string &filename() const;
     std::string &filename();
+    const std::vector<std::string> &labels() const;
+    std::vector<std::string> &labels();
     index_t num_of_nodes() const;
     const std::string get_tree_metric();
     void get(index_t point_id, Point_t *entry) const;

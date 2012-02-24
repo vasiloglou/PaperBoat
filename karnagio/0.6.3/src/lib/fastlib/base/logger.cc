@@ -340,6 +340,7 @@ SilentLogger::~SilentLogger() {
 
 boost::scoped_ptr<Logger> logger(new SilentLogger());
 boost::exception_ptr global_exception=boost::exception_ptr();
+boost::shared_ptr<boost::mutex> global_exception_mutex(new boost::mutex());
 
 void Logger::SetLogger(const std::string &logger_type) {
   boost::mutex::scoped_lock lock(logger_mutex);

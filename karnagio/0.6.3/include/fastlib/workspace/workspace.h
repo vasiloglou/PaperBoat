@@ -98,7 +98,7 @@ class WorkSpace : boost::noncopyable {
     // for executables 
     void LoadAllTables(const std::vector<std::string> &args);
     void IndexAllReferencesQueries(const std::vector<std::string> &args);
-    void ExportAllTables(const std::vector<std::string> &args);
+    void ExportAllTables(const std::vector<std::string> args);
     /*
      * @brief this is an auxiliary function that loads a table 
      *        from a file to the workspace. This function 
@@ -242,6 +242,7 @@ class WorkSpace : boost::noncopyable {
     /**
      * @brief schedule mode = 0 uses the threadpool
      *                      = 1 uses a vector of threads
+     *                      = 2 executes the task immediately not asynchronous
      */
     void set_schedule_mode(int schedule_mode);
     void set_pool(int n_threads);
@@ -325,7 +326,8 @@ class WorkSpace : boost::noncopyable {
     std::map<std::string, boost::shared_ptr<boost::mutex> > mutex_map_;
     boost::mutex global_mutex_;
     boost::scoped_ptr<boost::threadpool::pool> pool_; 
-    std::vector<boost::shared_ptr<boost::thread> > vector_pool_;
+    std::list<boost::thread*> vector_pool_;
+    boost::thread_group thread_group_;
     /**
      * @brief this variable selects which scheduler to use
      *        if it is set to 0 it uses the boost threadpool
@@ -333,7 +335,7 @@ class WorkSpace : boost::noncopyable {
      */
     int schedule_mode_;
     boost::mutex schedule_mutex_;
-    void ExportAllTablesTask(const std::vector<std::string> &args);
+    void ExportAllTablesTask(const std::vector<std::string> args);
     
     void DummyThreadCancel(boost::shared_ptr<boost::thread> thread);
     void DummyThreadLaunch(boost::threadpool::task_func const & task);

@@ -181,8 +181,7 @@ class ops {
     static inline long double Dot(index_t length, const PrecisionType *x, const PrecisionType *y) {
       return CppBlas<PrecisionType>::dot(length, x, 1, y, 1);
     }
-
-
+    
     /**
      * @brief Finds the dot product of two arrays
      *        (\f$x \cdot y\f$).
@@ -209,6 +208,35 @@ class ops {
       DEBUG_SAME_SIZE(x.length(), y.length());
       return Dot<PrecisionType>(x.length(), x.ptr(), y.ptr());
     }
+    /**
+     *  @brief Updates the outer product of a vector and itself
+     *  (\f$ A \gets \alpha x x^T +A)
+     */
+    template<typename PrecisionType>
+    static inline void SelfOuterUpdate(double alpha, 
+        index_t length,
+        const PrecisionType *x, PrecisionType *A) {
+      CppBlas<PrecisionType>::syr('L', length, alpha, x, 1, A, 1);
+      for(index_t i=0; i<length; ++i) {
+        for(index_t j=0; j<i; ++j) {
+          *(A+i+j*length)=*(A+j+i*length);
+        }
+      }
+    }
+   
+    template<typename PrecisionType1,
+             typename PrecisionType2,
+             bool IsBoolVector>
+    static inline void SelfOuterUpdate(double alpha, 
+        const Matrix<PrecisionType1, IsBoolVector> &x, 
+        Matrix<PrecisionType2, false> *A) {
+      DEBUG_SAME_SIZE(x.length(), A->n_rows());
+      DEBUG_SAME_SIZE(x.length(), A->n_cols());
+      SelfOuterUpdate(alpha, x.length(), x.ptr(), 
+          A->ptr());
+    }
+
+
 
     /**
      * @brief Scales an array in-place by some factor

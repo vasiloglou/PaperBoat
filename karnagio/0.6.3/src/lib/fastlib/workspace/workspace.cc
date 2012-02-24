@@ -30,6 +30,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "boost/algorithm/string/predicate.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/bind.hpp"
+#include "boost/thread/thread_time.hpp"
+#include "fastlib/util/string_utils.h"
 
 namespace fl { namespace ws {
   WorkSpace::WorkSpace() {
@@ -39,25 +41,20 @@ namespace fl { namespace ws {
     //
   }
   WorkSpace::~WorkSpace() {
-    if (schedule_mode_==0) {
-      pool_->wait();
-    } else {
-      if (schedule_mode_==1) {
-        for(size_t i=0; i<vector_pool_.size(); ++i) {
-          vector_pool_[i]->join();
-        }     
-      }
+    WaitAllTasks();
+    std::map<std::string, boost::any>::iterator it1;
+    for(it1=var_map_.begin();it1!=var_map_.end(); ++it1) {
+      it1->second=std::string();
     }
     std::map<std::string, boost::shared_ptr<boost::mutex> >::iterator it;
+    global_mutex_.try_lock();
     for(it=mutex_map_.begin(); it!=mutex_map_.end(); ++it) {
       // we need to make sure that all the mutexes are unlocked
       it->second->try_lock();
       it->second->unlock();
-      //delete it->second;
+      it->second.reset(new boost::mutex());
     }
-    if (fl::global_exception) {
-        boost::rethrow_exception(fl::global_exception);
-    }
+    global_mutex_.unlock();
   }
 
   void WorkSpace::LoadAllTables(const std::vector<std::string> &args) {
@@ -152,33 +149,43 @@ namespace fl { namespace ws {
   }
 
   void WorkSpace::ExportAllTablesTask(
-      const std::vector<std::string> &args) {
-    for(unsigned int i=0; i<args.size(); ++i) {
-      if (boost::algorithm::contains(args[i], "_out=")) {
-        std::vector<std::string> tokens;
-        boost::algorithm::split(tokens, args[i],
-            boost::algorithm::is_any_of("="));
-        // check if it contains more than one filenames
-        if (boost::algorithm::contains(tokens[1], ":")==false
-            && boost::algorithm::contains(tokens[1], ",")==false) {
-          std::string filename=tokens[1];
-          std::string variable=filename;
-          ExportToFile(variable, filename);
-        } else {
-          std::vector<std::string> filenames;
-          boost::algorithm::split(filenames, args[i], 
-             boost::algorithm::is_any_of(":,"));
-          for(unsigned int i=0; i<filenames.size(); ++i) {
-            std::string variable(filenames[i]);
-            ExportToFile(variable, filenames[i]);
+      const std::vector<std::string> args) {
+    try {
+      for(unsigned int i=0; i<args.size(); ++i) {
+        if (boost::algorithm::contains(args[i], "_out=")) {
+          std::vector<std::string> tokens(2);
+          size_t pos=args[i].find('=');
+          tokens[1]=args[i].substr(pos+1); 
+          //tokens=fl::SplitString(args[i], "=");
+          // check if it contains more than one filenames
+          if (boost::algorithm::contains(tokens[1], ":")==false
+              && boost::algorithm::contains(tokens[1], ",")==false) {
+            std::string filename=tokens[1];
+            std::string variable=filename;
+            ExportToFile(variable, filename);
+          } else {
+            std::vector<std::string> filenames;
+            boost::algorithm::split(filenames, args[i], 
+               boost::algorithm::is_any_of(":,"));
+            for(unsigned int i=0; i<filenames.size(); ++i) {
+              std::string variable(filenames[i]);
+              ExportToFile(variable, filenames[i]);
+            }
           }
         }
       }
     }
+    catch(const boost::thread_interrupted &e) {
+      std::cout<< "thread interruption"<<std::endl;
+    }
+    catch(...) {
+      boost::mutex::scoped_lock lock(*global_exception_mutex);
+      fl::global_exception=boost::current_exception();
+    }
   }
 
   void WorkSpace::ExportAllTables(
-      const std::vector<std::string> &args) {
+      const std::vector<std::string> args) {
     this->schedule(boost::bind(&WorkSpace::ExportAllTablesTask, this, args));
   }
 
@@ -298,22 +305,21 @@ namespace fl { namespace ws {
 
   void WorkSpace::ExportToFile(const std::string &name, const std::string &filename) {
     boost::mutex* mutex;
-    global_mutex_.lock();
-    bool is_name_in_map=mutex_map_.count(name)==0;
-    global_mutex_.unlock();
+    bool is_name_in_map;
+    {
+      boost::mutex::scoped_lock lock(global_mutex_);
+      is_name_in_map=mutex_map_.count(name)==0;
+    }
     if (is_name_in_map) {
       mutex=new boost::mutex();
-      global_mutex_.lock();
+      boost::mutex::scoped_lock lock(global_mutex_);
       mutex_map_[name].reset(mutex);
-      global_mutex_.unlock();
       mutex->lock();
     } else {
-      global_mutex_.lock();
+      boost::mutex::scoped_lock lock(global_mutex_);
       mutex=mutex_map_[name].get();
-      global_mutex_.unlock();
-
     }
-    mutex->lock();
+    boost::mutex::scoped_lock lock(*mutex);
     bool success=false;
     boost::mpl::for_each<ParameterTables_t>(SaveMeta(&var_map_, 
           name, filename, &success));
@@ -323,9 +329,6 @@ namespace fl { namespace ws {
       fl::logger->Die()<<"Cannot save table ("<<name<<"), the table "
         "type is not supported"; 
     }
-    global_mutex_.lock();
-    mutex->unlock();
-    global_mutex_.unlock();
   }
 
   void WorkSpace::ExportToFileSequence(
@@ -479,7 +482,7 @@ namespace fl { namespace ws {
         std::vector<index_t> *dense_sizes,
         std::vector<index_t> *sparse_sizes) {
     bool success=false;
-    boost::mutex::scoped_lock(global_mutex_);
+    boost::mutex::scoped_lock lock(global_mutex_);
     boost::mpl::for_each<DataTables_t>(
         WorkSpace_GetTableInfo::Do(this,
           table_name,
@@ -524,18 +527,26 @@ namespace fl { namespace ws {
 
   void WorkSpace::DummyThreadLaunch(boost::threadpool::task_func const & task) {
     boost::thread t(task);
-    t.join();
+    try {
+      t.join();
+    }
+    catch(const boost::thread_interrupted &e) {
+      std::cout<< "dummy interrupted"<<std::endl;
+      t.sleep(boost::posix_time::ptime(boost::posix_time::pos_infin));
+    }
   }
 
   void WorkSpace::CancelAllTasks() {
+    boost::mutex::scoped_lock lock(schedule_mutex_);
     if (schedule_mode_==0) {
       pool_->clear();
     } else {
       if (schedule_mode_==1) {
-        for(size_t i=0; i<vector_pool_.size(); ++i) {
-          //boost::thread t(boost::bind(&WorkSpace::DummyThreadCancel,
-          //        this, vector_pool_[i]));
-          vector_pool_[i]->interrupt();
+        for(std::list<boost::thread*>::iterator it=vector_pool_.begin();
+              it!=vector_pool_.end(); ++it) {
+           (*it)->interrupt();
+           (*it)->join();
+          it=vector_pool_.erase(it);
         }
       }
     }
@@ -543,12 +554,74 @@ namespace fl { namespace ws {
 
   void WorkSpace::WaitAllTasks() {
     if (schedule_mode_==0) {
-      pool_->wait();
+      while(true) {
+        //boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+        boost::mutex::scoped_lock lock(*global_exception_mutex);
+        if (fl::global_exception) {
+          CancelAllTasks();
+        }
+        if (pool_->empty()) {
+          break;
+        }
+      }
     } else {
       if (schedule_mode_==1) {
-        for(size_t i=0; i<vector_pool_.size(); ++i) {
-          vector_pool_[i]->join();
-        }
+        size_t pool_size=1;
+        while (pool_size>0) {
+          {
+            std::list<boost::thread*>::iterator list_end;
+            std::list<boost::thread*>::iterator list_begin;
+            {
+              boost::mutex::scoped_lock lock1(schedule_mutex_);
+              list_begin=vector_pool_.begin();
+              list_end=vector_pool_.end();
+            }
+            for(std::list<boost::thread*>::iterator it=list_begin;
+                it!=list_end; ++it) {
+              if ((*it)->get_id()==boost::this_thread::get_id()) {
+                std::cout<<(*it)->get_id()<<std::endl;
+                thread_group_.remove_thread(*it);
+                delete *it;
+                { 
+                  boost::mutex::scoped_lock lock1(schedule_mutex_);
+                  it=vector_pool_.erase(it);
+                }
+                continue;
+              }
+              if ((*it)->joinable()==false) {
+                thread_group_.remove_thread(*it);
+                delete *it;
+                { 
+                  boost::mutex::scoped_lock lock1(schedule_mutex_);
+                  it=vector_pool_.erase(it);
+                }
+                continue;
+              }
+              if ((*it)->timed_join(boost::posix_time::milliseconds(100))==true) {
+                thread_group_.remove_thread(*it);
+                delete *it;
+                { 
+                  boost::mutex::scoped_lock lock1(schedule_mutex_);
+                  it=vector_pool_.erase(it);
+                }
+                continue;
+              }
+            }
+          }
+          boost::this_thread::yield();
+          // boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+          {
+            boost::mutex::scoped_lock lock2(*global_exception_mutex);
+            if (fl::global_exception) {
+              CancelAllTasks();
+            }
+          }
+          {
+            boost::mutex::scoped_lock lock1(schedule_mutex_);
+            pool_size=vector_pool_.size();
+          }
+        }     
+        thread_group_.join_all();
       }
     }
   }
@@ -573,18 +646,29 @@ namespace fl { namespace ws {
   } 
 
   void WorkSpace::schedule(boost::threadpool::task_func const & task) {
-    boost::mutex::scoped_lock lock(schedule_mutex_);
+    boost::mutex::scoped_lock lock1(schedule_mutex_);
+    boost::mutex::scoped_lock lock2(*global_exception_mutex);
+    if (fl::global_exception) {
+      return;
+    }
     if (schedule_mode_==0) {
       pool_->schedule(task);
     } else {
+      if (schedule_mode_==1) {
         try { 
-        boost::shared_ptr<boost::thread> ptr(
-            new boost::thread(&WorkSpace::DummyThreadLaunch, this, task));
-        vector_pool_.push_back(ptr);
-        } catch (const boost::thread_resource_error& exception)
+          vector_pool_.push_back(thread_group_.create_thread(
+               task));
+        } 
+        catch (const boost::thread_resource_error& exception)
         {
-            fl::logger->Message() << "boost::thread_resource_erorr has been raised " << vector_pool_.size() << " " << std::endl;
+            fl::logger->Message() << "boost::thread_resource_erorr has been raised, "
+              "threads already allocated: " << vector_pool_.size() << " " << std::endl;
         }
+      } else {
+        if (schedule_mode_==2) {
+          task();
+        }
+      }
     }
   }
 

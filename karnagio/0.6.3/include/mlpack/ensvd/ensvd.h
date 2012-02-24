@@ -73,6 +73,15 @@ class EnSvd<boost::mpl::void_> {
                 const boost::program_options::variables_map &vm);
         template<typename TableType>
         void operator()(TableType&); 
+
+        template<typename TableType>
+        static void MulTask(
+            WorkSpaceType *ws,
+            const std::string lsv_name,
+            boost::shared_ptr<TableType> references_table,
+            boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> rsv_table,
+            boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> lsv_table);
+
       private:
         WorkSpaceType *ws_;
         const boost::program_options::variables_map vm_;

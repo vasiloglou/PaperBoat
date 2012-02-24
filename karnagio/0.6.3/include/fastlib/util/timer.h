@@ -95,8 +95,6 @@ class Timer {
 #else
 /**
  * This is a timer class for benchmarking programs.
- * author: abhimanyu aditya
- * email: abhimanyu@analytics1305.com
  */
 class Timer {
 

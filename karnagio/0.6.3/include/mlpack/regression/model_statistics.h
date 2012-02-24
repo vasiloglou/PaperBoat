@@ -52,25 +52,52 @@ namespace fl {namespace ml {
       index_t attribute=0;
       for(size_t i=0; i<(standard_errors.size()+(prediction_index<0?0:1)); ++i) {
         if (i!=prediction_index) {
-          standard_errors_table->set(i, standard_errors[attribute]);
-          confidence_interval_los_table->set(i, confidence_interval_los[attribute]);
-          confidence_interval_his_table->set(i, confidence_interval_his[attribute]);
-          t_statistics_table->set(i, t_statistics[attribute]);
-          p_values_table->set(i, p_values[attribute]);
+          if (standard_errors_table!=NULL) {
+            standard_errors_table->set(i, standard_errors[attribute]);
+          }
+          if (confidence_interval_los_table!=NULL) {
+            confidence_interval_los_table->set(i, confidence_interval_los[attribute]);
+          }
+          if (confidence_interval_his_table!=NULL) {
+            confidence_interval_his_table->set(i, confidence_interval_his[attribute]);
+          }
+          if (t_statistics_table!=NULL) {
+            t_statistics_table->set(i, t_statistics[attribute]);
+          }
+          if (p_values_table!=NULL) {
+            p_values_table->set(i, p_values[attribute]);
+          }
           attribute++;
         } else {
-          standard_errors_table->set(i, 0);
-          confidence_interval_los_table->set(i, 0);
-          confidence_interval_his_table->set(i, 0);
-          t_statistics_table->set(i, 0);
+          if (standard_errors_table!=NULL) {
+            standard_errors_table->set(i, 0);
+          }
+          if (confidence_interval_los_table!=NULL) {
+            confidence_interval_los_table->set(i, 0);
+          }
+          if (confidence_interval_his_table!=NULL) {
+            confidence_interval_his_table->set(i, 0);
+          }
+          if (t_statistics_table!=NULL) {
+            t_statistics_table->set(i, 0);
+          }
+          if (p_values_table!=NULL)
           p_values_table->set(i, 0);
 
         }
       }
-      adjusted_r_squared_table->set(0, adjusted_r_squared);
-      f_statistic_table->set(0, f_statistic);
-      r_squared_table->set(0, r_squared);
-      sigma_table->set(0, sigma);
+      if (adjusted_r_squared_table!=NULL) {
+        adjusted_r_squared_table->set(0, adjusted_r_squared);
+      }
+      if (f_statistic_table!=NULL) {
+        f_statistic_table->set(0, f_statistic);
+      }
+      if (r_squared_table!=NULL) {
+        r_squared_table->set(0, r_squared);
+      }
+      if (sigma_table!=NULL) {
+        sigma_table->set(0, sigma);
+      }
     }
   };
 }}

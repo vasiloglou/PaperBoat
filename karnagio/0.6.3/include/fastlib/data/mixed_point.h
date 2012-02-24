@@ -33,6 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "boost/mpl/equal_to.hpp"
 #include "boost/mpl/if.hpp"
 #include "boost/mpl/find.hpp"
+#include "boost/mpl/insert.hpp"
 #include "boost/mpl/iterator_range.hpp"
 #include "boost/mpl/inherit.hpp"
 #include "boost/mpl/inherit_linearly.hpp"
@@ -319,6 +320,16 @@ class MixedPoint : public fl::data::mixed_ops {
     inline void SetRandom(const CalcPrecision_t low,
                           const CalcPrecision_t hi, 
                           const CalcPrecision_t sparsity=0);
+
+    template<typename ResultMatrixType>
+    void UpdateSefOuterProd(
+        ResultMatrixType *result) const;
+
+    template<typename ResultMatrixType,
+             typename MixedPointArgsType>
+    void UpdateOuterProd(
+        const fl::data::MixedPoint<MixedPointArgsType> &x,
+        ResultMatrixType *result) const;
 
     inline size_t size() const ;
 
@@ -828,6 +839,160 @@ void MixedPoint<ParamList>::SetRandom(const CalcPrecision_t low,
   set_modified();
 
 }
+
+
+template<typename PointType1,
+         typename ResultType,
+         typename DenseList,
+         typename SparseList>
+struct UpdateSelfOuterDense1 {
+  public:
+    UpdateSelfOuterDense1(
+        const PointType1 &point,
+        ResultType *result,
+        index_t *ind) :
+      point_(point),  
+      result_(result), ind_(ind) {}
+
+    template<typename T>
+    void operator()(T) {
+      point_.template dense_point<T>().
+          UpdateSelfOuterProd(*ind_, result_);
+      typedef typename boost::mpl::find<DenseList, T>::type It_t; 
+      typedef typename boost::mpl::insert<
+        boost::mpl::vector0<>,
+        typename boost::mpl::advance<
+          It_t, 
+          boost::mpl::int_<1>
+        >::type,
+        typename boost::mpl::end<DenseList>::type
+      >::type TheRestDense_t;
+
+      boost::mpl::for_each<TheRestDense_t>(
+          UpdateSelfOuter2(point_, ind_, result_));  
+      boost::mpl::for_each<SparseList>(
+          UpdateSelfOuter3(point_, ind_, result_));
+
+    }
+
+  private:
+    struct UpdateSelfOuter2 {
+      public:
+        UpdateSelfOuter2(const PointType1 &point,
+            ResultType *result,
+            index_t *ind) :
+          point_(point), result_(result), ind_(ind) {} 
+        template<typename T>
+        void operator()(T) {
+          point_.template dense_point<T>().UpdateSelfOuter(
+              result_, *ind_);
+          *ind_+=point_.template dense_point<T>.size();
+        }
+      private:
+        const PointType1 &point_;
+        ResultType *result_;
+        index_t *ind_;
+    };
+    
+    struct UpdateSelfOuter3 {
+      public:
+        UpdateSelfOuter3(const PointType1 &point,
+            ResultType *result,
+            index_t *ind) :
+          point_(point), result_(result), ind_(ind) {} 
+        template<typename T>
+        void operator()(T) {
+          point_.template sparse_point<T>().UpdateSelfOuter(
+              result_, *ind_);
+          *ind_+=point_.template dense_point<T>.size();
+        }
+      private:
+        const PointType1 &point_;
+        ResultType *result_;
+        index_t *ind_;
+    };
+
+    const PointType1 &point_;
+    ResultType *result_;
+    index_t *ind_; 
+  
+};
+
+template<typename PointType1,
+         typename ResultType,
+         typename SparseList>
+struct UpdateSelfOuterSparse1 {
+  public:
+    UpdateSelfOuterSparse1(
+        const PointType1 &point,
+        ResultType *result,
+        index_t *ind) :
+      point_(point),  
+      result_(result), ind_(ind) {}
+
+    template<typename T>
+    void operator()(T) {
+      point_.template sparse_point<T>().
+          UpdateSelfOuterProd(*ind_, result_);
+      typedef typename boost::mpl::find<SparseList, T>::type It_t; 
+      typedef typename boost::mpl::insert<
+        boost::mpl::vector0<>,
+        typename boost::mpl::advance<
+          It_t, 
+          boost::mpl::int_<1>
+        >::type,
+        typename boost::mpl::end<SparseList>::type
+      >::type TheRestDense_t;
+
+      boost::mpl::for_each<SparseList>(
+          UpdateSelfOuter2(point_, ind_, result_));
+
+    }
+
+  private:
+    struct UpdateSelfOuter2 {
+      public:
+        UpdateSelfOuter2(const PointType1 &point,
+            ResultType *result,
+            index_t *ind) :
+          point_(point), result_(result), ind_(ind) {} 
+        template<typename T>
+        void operator()(T) {
+          point_.template sparse_point<T>().UpdateSelfOuter(
+              result_, *ind_);
+          *ind_+=point_.template sparse_point<T>.size();
+        }
+      private:
+        const PointType1 &point_;
+        ResultType *result_;
+        index_t *ind_;
+    };
+    
+    const PointType1 &point_;
+    ResultType *result_;
+    index_t *ind_; 
+  
+};
+
+template<typename ParamList>
+template<typename ResultMatrixType>
+void MixedPoint<ParamList>::UpdateSefOuterProd(
+     ResultMatrixType *result) const {
+  
+  index_t ind=0;
+  boost::mpl::for_each<DenseTypes_t>(
+      UpdateSelfOuterDense1<MixedPoint<ParamList>,
+                       ResultMatrixType,
+                       DenseTypes_t,
+                       SparseTypes_t>(*this, result, &ind));
+  boost::mpl::for_each<SparseTypes_t>(
+      UpdateSelfOuterSparse1<
+        MixedPoint<ParamList>,
+                   ResultMatrixType,
+                   SparseTypes_t>(*this, result, &ind));
+}
+
+
 
 template<typename ParamList>
 size_t MixedPoint<ParamList>::size() const {

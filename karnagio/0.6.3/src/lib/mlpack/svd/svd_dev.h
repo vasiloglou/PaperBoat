@@ -30,6 +30,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "fastlib/table/linear_algebra.h"
 #include "fastlib/math/fl_math.h"
 #include "fastlib/table/default_sparse_double_table.h"
+#include "fastlib/table/default_table.h"
 
 namespace fl {namespace ml {
 
@@ -291,8 +292,9 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
                                        ExportedTableType *left,
                                        ExportedTableType *right_trans) {
   int32 svd_rank=sv->n_entries();
-  fl::table::DefaultSparseDoubleTable centroids;
-  typename fl::table::DefaultSparseDoubleTable::Point_t centroid;
+  typedef fl::table::DefaultSparseDoubleTable CentroidTable_t;
+  CentroidTable_t centroids;
+  typename CentroidTable_t::Point_t centroid;
   centroids.Init("", 
                  std::vector<index_t>(),
                  std::vector<index_t>(1, table.n_attributes()),
@@ -411,7 +413,7 @@ void Svd<TableType>::ComputeConceptSvd(Table_t &table,
   right_trans->SetAll(0.0);
   for(index_t i=0; i<centroids.n_entries(); ++i) {
     centroids.get(i, &centroid);
-    for(typename fl::table::DefaultSparseDoubleTable::Point_t::iterator 
+    for(typename CentroidTable_t::Point_t::iterator 
         it=centroid.begin(); it!=centroid.end(); ++it) {
       right_trans->set(it.attribute(), i, it.value());
     }

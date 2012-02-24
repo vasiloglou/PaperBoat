@@ -557,6 +557,7 @@ namespace fl { namespace data {
               if (std::getline(fin, line).good()) {
                 boost::algorithm::trim_if(line,  boost::algorithm::is_any_of(" ,\t\r\n"));
                 FindDelimeter(line);
+                num_of_points_++;
               }
               else {
                 fl::logger->Die() << "Something went wrong while reading";
