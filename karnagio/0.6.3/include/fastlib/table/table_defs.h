@@ -93,6 +93,9 @@ namespace table {
     if (tree_ != NULL) {
       fl::logger->Die() << "You are trying to index a table which is already indexed";
     }
+    if (data_->n_points()<=0) {
+      fl::logger->Die()<<"You are trying to index a table that is empty";
+    }
     real_to_shuffled_.resize(data_->n_points());
     shuffled_to_real_.resize(data_->n_points());
     leaf_size_ = args.leaf_size;

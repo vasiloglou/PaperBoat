@@ -54,17 +54,29 @@ inline void split_line_on_char(std::string& line,
 inline std::vector<std::string> SplitString(const std::string &input,
     const std::string &delimeter) {
   std::vector<std::string> tokens;
-  boost::algorithm::split(tokens, input, boost::algorithm::is_any_of(delimeter));
+  boost::algorithm::split(tokens, input, 
+      boost::algorithm::is_any_of(delimeter),
+      boost::algorithm::token_compress_on);
   if (tokens.size()==1) {
     if (tokens[0]=="") {
       tokens.clear();
     }
+  }
+  if (tokens.size()>0 && tokens[0]=="") {
+    tokens.erase(tokens.begin());
+  }
+  if (tokens.size()>0 && tokens.back()==""){
+    tokens.pop_back();
   }
   return tokens;
 }
 
 inline bool StringStartsWith(const std::string &input, const std::string &test) {
   return boost::algorithm::starts_with(input, test);
+}
+
+inline bool StringEndsWith(const std::string &input, const std::string &test) {
+  return boost::algorithm::ends_with(input, test);
 }
 
 inline void StringReplace(std::string *input, const std::string &search,

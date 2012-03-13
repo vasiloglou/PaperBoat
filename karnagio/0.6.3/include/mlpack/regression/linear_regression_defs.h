@@ -447,11 +447,13 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
   if (vm.count("check_columns")) {
     if (vm["check_columns"].as<bool>()) {
       std::vector<index_t> red_features=reference_table->RedundantCategoricals();
+      /*
       std::cout<<red_features.size()<<":";
       for(size_t i=0; i<red_features.size(); ++i) {
         std::cout<<red_features[i]<<",";
       }
       std::cout<<std::endl;
+      */
       for(std::vector<index_t>::const_iterator it=red_features.begin();
             it!=red_features.end(); ++it) {
         std::deque<int>::iterator it1;

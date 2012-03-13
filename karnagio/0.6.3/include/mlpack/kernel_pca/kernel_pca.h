@@ -23,16 +23,25 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef PAPERBOAT_INCLUDE_FASTLIB_BASE_VERSION_H_
-#define PAPERBOAT_INCLUDE_FASTLIB_BASE_VERSION_H_
+#ifndef FL_LITE_MLPACK_KERNEL_PCA_KERNEL_PCA_H
+#define FL_LITE_MLPACK_KERNEL_PCA_KERNEL_PCA_H
+#include <vector>
 #include <string>
-namespace fl {
-  class Version {
-    public:
-      static std::string Get() {
-        return "0.6.3";
-      }
-  };
-}
+#include "boost/shared_ptr.hpp"
+#include "fastlib/base/base.h"
+namespace fl { namespace ml {
+  template<typename TemplateArgs>
+  class KernelPCA;
 
+  template<>
+  class KernelPCA<boost::mpl::void_> {
+    public:
+        template <typename DataAccessType, typename BranchType>
+        static int Main(DataAccessType *data, const std::vector<std::string> &args);
+        
+        template<typename DataAccessType>
+        static void Run(DataAccessType *data,
+            const std::vector<std::string> &args);
+  };
+}}
 #endif

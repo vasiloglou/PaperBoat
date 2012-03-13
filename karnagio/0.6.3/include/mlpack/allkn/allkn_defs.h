@@ -873,7 +873,7 @@ int AllKN<boost::mpl::void_>::Core<TableType>::Main(
           <<", while labels table has " << reference_labels_input_table->n_entries();
       }
       // Allocate the table for writing out the labels.      
-      boost::shared_ptr<typename DataAccessType::UIntegerTable_t> result_labels_table;
+      boost::shared_ptr<typename DataAccessType::IntegerTable_t> result_labels_table;
       data->Attach(labels_out,
 		      std::vector<index_t>(1, 1),
 		      std::vector<index_t>(),
@@ -1017,7 +1017,7 @@ int AllKN<boost::mpl::void_>::Core<TableType>::Main(
         data->Attach(query_labels_in, &query_labels_input_table);
       }
       // Allocate the table for writing out the labels.      
-      boost::shared_ptr<typename DataAccessType::UIntegerTable_t> result_labels_table;
+      boost::shared_ptr<typename DataAccessType::IntegerTable_t> result_labels_table;
       data->Attach(labels_out,
 		   std::vector<index_t>(1, 1),
 		   std::vector<index_t>(),

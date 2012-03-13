@@ -54,61 +54,49 @@ struct Typename<char> {
 };
 
 template<>
-struct Typename<signed char> {
+struct Typename<int8> {
   static std::string Name() {
-    return "signed_char";
+    return "int8";
   }
 };
 
 template<>
-struct Typename<unsigned char> {
+struct Typename<uint8> {
   static std::string Name() {
-    return "unsigned_char";
+    return "uint8";
   }
 };
 
 template<>
-struct Typename<int> {
+struct Typename<int32> {
   static std::string Name() {
-    return "int";
+    return "int32";
   }
 };
 
 template<>
-struct Typename<unsigned int> {
+struct Typename<uint32> {
   static std::string Name() {
-    return "unsigned_int";
+    return "uint32";
   }
 };
 
 template<>
-struct Typename<long int> {
+struct Typename<int64> {
   static std::string Name() {
-    return "long_int";
+    return "int64";
   }
 };
 
 
 template<>
-struct Typename<unsigned long int> {
+struct Typename<uint64> {
   static std::string Name() {
-    return "unsigned_long_int";
+    return "uint64";
   }
 };
 
-template<>
-struct Typename<long long int> {
-  static std::string Name() {
-    return "long_long_int";
-  }
-};
 
-template<>
-struct Typename<unsigned long long int> {
-  static std::string Name() {
-    return "unsigned_long_long_int";
-  }
-};
 
 template<>
 struct Typename<float> {

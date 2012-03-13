@@ -647,14 +647,15 @@ namespace fl { namespace ws {
 
   void WorkSpace::schedule(boost::threadpool::task_func const & task) {
     boost::mutex::scoped_lock lock1(schedule_mutex_);
-    boost::mutex::scoped_lock lock2(*global_exception_mutex);
     if (fl::global_exception) {
       return;
     }
     if (schedule_mode_==0) {
+      boost::mutex::scoped_lock lock2(*global_exception_mutex);
       pool_->schedule(task);
     } else {
       if (schedule_mode_==1) {
+        boost::mutex::scoped_lock lock2(*global_exception_mutex);
         try { 
           vector_pool_.push_back(thread_group_.create_thread(
                task));
