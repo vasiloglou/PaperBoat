@@ -1,6 +1,6 @@
 EXPORT Definitions() :=  MACRO
-  #option('compileOptions', ' -I/e/ismion/hg/PaperBoat/hpcc/karnagio/include -I/e/ismion/hg/PaperBoat/hpcc/karnagio/src/lib -I/e/ismion/hg/PaperBoat/hpcc/src -g');
-  #option('linkOptions', '-L/e/ismion/hg/PaperBoat/hpcc/bin/debug/,-lpaperboat,-lboost_thread-mt,-lboost_program_options-mt,-llapack -lblas');
+  #option('compileOptions', ' -I/e/ismion/git/paperboat/hpcc/karnagio/include -I/e/ismion/git/paperboat/hpcc/karnagio/src/lib -I/e/ismion/git/paperboat/hpcc/src ');
+  #option('linkOptions', '-L/e/ismion/git/paperboat/hpcc/bin/debug/,-lpaperboat,-lboost_thread-mt,-lboost_program_options-mt,-llapack -lblas');
 
   STRING DefineWorkSpace() := BEGINC++
     #ifndef PAPERBOAT_WORKSPACE
