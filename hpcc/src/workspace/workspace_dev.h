@@ -109,6 +109,8 @@ namespace fl {namespace hpcc{
   void WorkSpace::LoadAllDenseHPCCDataSets(const std::string &arguments,
       const char *in_data,
       const uint64 data_len) {
+
+    FL_SCOPED_LOG(LoadDense);
     typedef typename boost::mpl::at<
       DenseTables_t,
       typename T::Value_t
@@ -119,24 +121,34 @@ namespace fl {namespace hpcc{
       std::vector<std::string> toks=fl::SplitString(tokens[i], "=");
       if (fl::StringEndsWith(toks[0], "_in")) {
         std::string file_name=toks[1];
-        std::vector<std::string> three_tokens;
-        three_tokens=fl::SplitString(toks[1], "$");
-        if (three_tokens.size()!=3) {
-          fl::logger->Die()<<"Dataset name must be of the form "
-            " storage:precision:number, for example: "
-            " dense$double$3 or sparse$bool$5";
+        std::vector<std::string> file_names=fl::SplitString(file_name, ",");
+        for(size_t j=0; j<file_names.size(); ++j) {
+          std::vector<std::string> three_tokens;
+          three_tokens=fl::SplitString(file_names[j], "$");
+          if (three_tokens.size()!=3) {
+            fl::logger->Die()<<"Dataset name must be of the form "
+              " storage:precision:number, for example: "
+              " dense$double$3 or sparse$bool$5";
+          }
+          std::string storage=three_tokens[0];
+          std::string type=three_tokens[1];
+          std::string name=three_tokens[2];
+          if (storage!="dense") {
+            continue;
+          }
+          if (type!=fl::data::Typename<typename T::Value_t>::Name()) {
+            continue;
+          }
+          uint8 id=(uint8)boost::lexical_cast<int>(name);
+          for(size_t k=0; k<infiles.size(); ++k) {
+            if (infiles[k].second==id) {
+              fl::logger->Die()<<"File id=("<<(int)id<<") appears twice "
+                <<"("<<file_names[j]<<") and ("
+                <<infiles[k].first<<")";
+            }
+          }
+          infiles.push_back(std::make_pair(file_names[j], id)); 
         }
-        std::string storage=three_tokens[0];
-        std::string type=three_tokens[1];
-        std::string name=three_tokens[2];
-        if (storage!="dense") {
-          continue;
-        }
-        if (type!=fl::data::Typename<typename T::Value_t>::Name()) {
-          continue;
-        }
-        infiles.push_back(std::make_pair(toks[1], 
-             (uint8)boost::lexical_cast<int>(name))); 
       }
     } 
     if (infiles.empty()) {
@@ -218,6 +230,8 @@ namespace fl {namespace hpcc{
   void WorkSpace::LoadAllSparseHPCCDataSets(const std::string &arguments,
       const char *in_data,
       const uint64 data_len) {
+
+    FL_SCOPED_LOG(LoadSparse);
     typedef typename boost::mpl::at<
       SparseTables_t,
       typename T::Value_t
@@ -228,24 +242,36 @@ namespace fl {namespace hpcc{
       std::vector<std::string> toks=fl::SplitString(tokens[i], "=");
       if (fl::StringEndsWith(toks[0], "_in")) {
         std::string file_name=toks[1];
-        std::vector<std::string> three_tokens;
-        three_tokens=fl::SplitString(toks[1], "$");
-        if (three_tokens.size()!=3) {
-          fl::logger->Die()<<"Dataset name must be of the form "
-            " storage:precision:number, for example: "
-            " dense$double$3 or sparse$bool$5";
-        }
-        std::string storage=three_tokens[0];
-        std::string type=three_tokens[1];
-        std::string name=three_tokens[2];
-        if (storage!="sparse") {
-          continue;
-        }
-        if (type!=fl::data::Typename<typename T::Value_t>::Name()) {
-          continue;
-        }
-        infiles.push_back(std::make_pair(toks[1], 
+        std::vector<std::string> file_names=fl::SplitString(file_name, ",");
+        for(size_t j=0; j<file_names.size(); ++j) {
+          std::vector<std::string> three_tokens;
+          three_tokens=fl::SplitString(file_names[j], "$");
+          if (three_tokens.size()!=3) {
+            fl::logger->Die()<<"Dataset name must be of the form "
+              " storage:precision:number, for example: "
+              " dense$double$3 or sparse$bool$5";
+          }
+          std::string storage=three_tokens[0];
+          std::string type=three_tokens[1];
+          std::string name=three_tokens[2];
+          if (storage!="sparse") {
+            continue;
+          }
+          if (type!=fl::data::Typename<typename T::Value_t>::Name()) {
+            continue;
+          }
+          uint8 id=(uint8)boost::lexical_cast<int>(name);
+          for(size_t k=0; k<infiles.size(); ++k) {
+            if (infiles[k].second==id) {
+              fl::logger->Die()<<"File id=("<<id<<") appears twice "
+                <<"("<<file_names[j]<<") and ("
+                <<infiles[k].first<<")";
+            }
+          }
+
+          infiles.push_back(std::make_pair(file_names[j], 
              (uint8)boost::lexical_cast<int>(name))); 
+        }
       }
     } 
     if (infiles.empty()) {
@@ -274,8 +300,8 @@ namespace fl {namespace hpcc{
     for(size_t i=0; i<infiles.size(); ++i) {
       tables[infiles[i].second].reset(new Table_t());
       this->Attach(infiles[i].first,
-          std::vector<index_t>(1, file_dims[infiles[i].second].second+1),
           std::vector<index_t>(),
+          std::vector<index_t>(1, file_dims[infiles[i].second].second+1),
           file_dims[infiles[i].second].first.size(),
           &tables[infiles[i].second]);
     }
@@ -289,20 +315,29 @@ namespace fl {namespace hpcc{
       }
       boost::shared_ptr<Table_t> table=tables[file_id];
       typename Table_t::Point_t point;
+      uint8 current_file=datum.file_id();
+      uint8 old_file=current_file;
       for(index_t i=0; i<table->n_entries(); ++i) {
         T datum(const_cast<char*>(in_data)+counter);
         table->get(i, &point);
-        uint16 current_number=datum.number();
-        uint16 old_number=current_number;
+        uint64 current_id=datum.id();
+        uint64 old_id=current_id;
         std::vector<std::pair<index_t,double> > elements;
-        while (current_number==old_number) {
+        while (current_id==old_id && current_file==old_file) {
           elements.push_back(std::make_pair(datum.number(), 
               datum.value()));
-          old_number=datum.number();
+          old_id=datum.id();
+          old_file=datum.file_id();
           counter+=T::size();
+          if (counter>=data_len) {
+            break;
+          }
           datum.set_ptr(const_cast<char*>(in_data)+counter);  
-          current_number=datum.number();
+          current_id=datum.id();
+          current_file=datum.file_id();
         }            
+        point.template sparse_point<typename T::Value_t>().Load(elements.begin(),
+            elements.end());
       }
     }
     for(size_t i=0; i<infiles.size(); ++i) {
@@ -322,6 +357,7 @@ namespace fl {namespace hpcc{
   void WorkSpace::ExportAllDenseHPCCDataSets(const std::string &arguments,
       void **out_data,
       unsigned int *data_len) {
+    FL_SCOPED_LOG(ExportDense);
     char** out_data1=reinterpret_cast<char**>(out_data);
     typedef typename boost::mpl::at<
       DenseTables_t,
@@ -349,8 +385,16 @@ namespace fl {namespace hpcc{
         if (type!=fl::data::Typename<typename T::Value_t>::Name()) {
           continue;
         }
-        outfiles.push_back(std::make_pair(file_name, 
-              (uint8)boost::lexical_cast<int>(name))); 
+        uint8 id=(uint8)boost::lexical_cast<int>(name);
+        for(size_t k=0; k<outfiles.size(); ++k) {
+          if (outfiles[k].second==id) {
+            fl::logger->Die()<<"File id=("<<id<<") appears twice "
+              <<"("<<file_name<<") and ("
+              <<outfiles[k].first<<")";
+          }
+        }
+
+        outfiles.push_back(std::make_pair(file_name, id)); 
       }
     } 
     if (outfiles.empty()) {
@@ -424,6 +468,7 @@ namespace fl {namespace hpcc{
   void WorkSpace::ExportAllSparseHPCCDataSets(const std::string &arguments,
       void **out_data,
       uint64 *data_len) {
+    FL_SCOPED_LOG(ExportSparse);
     char** out_data1=static_cast<char**>(out_data);
     typedef typename boost::mpl::at<
       SparseTables_t,
@@ -451,8 +496,17 @@ namespace fl {namespace hpcc{
         if (type!=fl::data::Typename<typename T::Value_t>::Name()) {
           continue;
         }
-        outfiles.push_back(std::make_pair(file_name, 
-              (uint8)boost::lexical_cast<int>(name)));       }
+        uint8 id=(uint8)boost::lexical_cast<int>(name);
+        for(size_t k=0; k<outfiles.size(); ++k) {
+          if (outfiles[k].second==id) {
+            fl::logger->Die()<<"File id=("<<id<<") appears twice "
+              <<"("<<file_name<<") and ("
+              <<outfiles[k].first<<")";
+          }
+        }
+
+        outfiles.push_back(std::make_pair(file_name, id)); 
+      }
     } 
     if (outfiles.empty()) {
       *data_len=0;

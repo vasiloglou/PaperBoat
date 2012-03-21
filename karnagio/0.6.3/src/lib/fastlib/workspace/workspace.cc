@@ -137,7 +137,7 @@ namespace fl { namespace ws {
           IndexTable(variable, metric, metric_args, leaf_size);
         } else {
           std::vector<std::string> filenames;
-          boost::algorithm::split(filenames, args[i], 
+          boost::algorithm::split(filenames, tokens[1], 
              boost::algorithm::is_any_of(":,"));
           for(unsigned int i=0; i<filenames.size(); ++i) {
             std::string variable(filenames[i]);

@@ -628,8 +628,9 @@ namespace fl {
           for(int i = 0; i < k_min_; i++) {
             typename CentroidTable_t::Point_t point;
             initial_centroids_in->get(i, &point);
+            initial_centroids_[i].Init(std::vector<index_t>(1,point.size()));
             initial_centroids_[i].template
-            dense_point<typename CentroidPoint_t::CalcPrecision_t>().Copy(point);
+            dense_point<typename CentroidPoint_t::CalcPrecision_t>().CopyValues(point);
           }
       }
 

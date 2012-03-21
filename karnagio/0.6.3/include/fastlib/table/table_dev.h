@@ -517,9 +517,13 @@ const std::string Table<TemplateMap>::get_tree_metric()  {
 template<typename TemplateMap>
 void Table<TemplateMap>::get(index_t point_id, typename Table<TemplateMap>::Point_t *entry) const {
   if (sort_points == false || !is_indexed()) {
+    DEBUG_ASSERT(point_id>=0);
+    DEBUG_ASSERT(point_id<n_entries());
     data_->get(point_id, entry);
   }
   else {
+    DEBUG_ASSERT(point_id>=0);
+    DEBUG_ASSERT(point_id<real_to_shuffled_.size());
     data_->get(real_to_shuffled_[point_id], entry);
   }
 }

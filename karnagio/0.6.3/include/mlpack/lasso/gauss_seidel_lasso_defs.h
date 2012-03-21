@@ -97,8 +97,8 @@ int GaussSeidelLasso<boost::mpl::void_>::Main(
   boost::program_options::store(clp.options(desc).run(), vm);
   boost::program_options::notify(vm);
   if (vm.count("help")) {
-    std::cout << fl::DISCLAIMER << "\n";
-    std::cout << desc << "\n";
+    fl::logger->Message() << fl::DISCLAIMER << "\n";
+    fl::logger->Message() << desc << "\n";
     return 1;
   }
 
@@ -206,16 +206,20 @@ int GaussSeidelLasso<boost::mpl::void_>::Core<TableType>::Main(DataAccessType *d
 
   // Output the final model to the screen.
   //model.PrintCoefficients("model.txt");
-  boost::shared_ptr<typename DataAccessType::template TableVector<double> > coeff_table;
-  std::string coefficients_out = vm["coefficients_out"].as<std::string>();
-  data->Attach(coefficients_out,
-               std::vector<index_t>(1, 1),
-               std::vector<index_t>(),
-               table->n_attributes() + 1,
-               &coeff_table);
-  model.Export(coeff_table.get());
-  data->Purge(coefficients_out);
-  data->Detach(coefficients_out);
+  boost::shared_ptr<typename DataAccessType::DefaultTable_t> coeff_table;
+  if (vm.count("coefficients_out")) {
+    fl::logger->Message()<<"Finished computations"<<std::endl;
+    std::string coefficients_out = vm["coefficients_out"].as<std::string>();
+    fl::logger->Message()<<"Exporting coefficients to "<< coefficients_out<<std::endl;
+    data->Attach(coefficients_out,
+                 std::vector<index_t>(1, 1),
+                 std::vector<index_t>(),
+                 table->n_attributes() + 1,
+                 &coeff_table);
+    model.Export(coeff_table.get());
+    data->Purge(coefficients_out);
+    data->Detach(coefficients_out);
+  }
 
   return 0;
 }

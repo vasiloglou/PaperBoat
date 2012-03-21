@@ -172,11 +172,11 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
   // Open the table for writing out the KDA labels.
   boost::shared_ptr<typename DataAccessType::template TableVector<index_t> > result_table;
   if (vm.count("result_out") > 0) {
-    data->Attach(vm["result_out"].as<std::string>(),
-                std::vector<index_t>(1, 1),
-                std::vector<index_t>(),
-                queries->n_entries(),
-                &result_table);
+    if (queries->n_entries()==0) {
+      fl::logger->Die()<<"You asked for --result_out but you haven't provided "
+        " a --queries_in option";
+    }
+    
   }
 
   
@@ -420,7 +420,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
       // Collect the result now
       if (vm["densities_out"].as<std::string>()!="") {
         boost::shared_ptr<
-          typename DataAccessType:: template TableVector<double> > densities;
+          typename DataAccessType::DefaultTable_t > densities;
         std::string densities_out=vm["densities_out"].as<std::string>();
         data->Attach(densities_out,
           std::vector<index_t>(1,1),
@@ -557,7 +557,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
           // Collect the result now
           if (vm.count("densities_out")) {
             boost::shared_ptr<
-              typename DataAccessType:: template TableVector<double> > densities;
+              typename DataAccessType::DefaultTable_t> densities;
             std::string densities_out=vm["densities_out"].as<std::string>();
             data->Attach(densities_out,
               std::vector<index_t>(1,1),
@@ -576,6 +576,10 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
       }
     }
   } else {
+    if (vm.count("kda_bandwidths")==0) {
+      fl::logger->Die()<<"You chose to run KDE but you haven't provided"
+        " the --kda_bandwidths option";
+    }
     double total_accuracy=0;
     double total_points=0;
     std::vector<index_t> points_per_class;
@@ -589,9 +593,9 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
     fl::logger->Message() << "Running KDA"<<std::endl;
     if (vm.count("queries_in")) {
       // Prepare to collect density results
-      std::vector<boost::shared_ptr<typename DataAccessType:: template TableVector<double> >  >densities(reference_set_count);
+      std::vector<boost::shared_ptr<typename DataAccessType::DefaultTable_t>  >densities(reference_set_count);
       for(index_t i=0; i<reference_set_count; ++i) {
-        densities[i].reset(new typename DataAccessType:: template TableVector<double>());
+        densities[i].reset(new typename DataAccessType::DefaultTable_t());
         std::string new_name = vm["densities_out"].as<std::string>();
         new_name += boost::lexical_cast<std::string>(i);
         data->Attach(new_name,
@@ -816,8 +820,8 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
       }
       boost::shared_ptr<typename DataAccessType::IntegerTable_t> query_labels;
       bool compute_score=false;
-      if (vm["query_labels_in"].as<std::string>()!="") {
-        data->Attach(vm["query_labels_in"].as<std::string>(), &query_labels);
+      if (vm["queries_labels_in"].as<std::string>()!="") {
+        data->Attach(vm["queries_labels_in"].as<std::string>(), &query_labels);
         compute_score=true;
       }
 
@@ -840,7 +844,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
         }
 
         for (index_t j = 0; j < densities.size(); j++) {
-          double this_score = densities[j]->operator[](i) * priors[j];
+          double this_score = densities[j]->get(i) * priors[j];
           if (this_score > score) {
             score = this_score;
             winner = j;
@@ -879,14 +883,16 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
       // Copy over to the table so that it can be exported.
       if (vm.count("result_out") > 0) {
         fl::logger->Message() << "Emitting the class labels for queries"<<std::endl;
-        boost::shared_ptr<typename DataAccessType::template TableVector<index_t> > result_out;
+        boost::shared_ptr<typename DataAccessType::IntegerTable_t > result_out;
         data->Attach(vm["result_out"].as<std::string>(),
             std::vector<index_t>(1, 1),
             std::vector<index_t>(),
             queries->n_entries(),
             &result_out);
+        typename DataAccessType::IntegerTable_t::Point_t point;
         for (index_t i = 0; i < queries->n_entries(); i++) {
-          result_out->set(i, winning_classes[i]);
+          result_out->get(i, &point);
+          point.set(0, winning_classes[i]);
         }
         data->Purge(vm["result_out"].as<std::string>());
         data->Detach(vm["result_out"].as<std::string>());
@@ -895,9 +901,10 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
           "exported"<<std::endl;
       }
       if (compute_score==true) {
+        total_points=densities.size();
         fl::logger->Message() << "Classification score on query set "
-          <<"("<< total_points <<")" "set is " <<
-	            100.0*total_accuracy/total_points<<"%%";
+          <<"(total_points="<< total_points <<")" "set is " <<
+	            100.0*total_accuracy/total_points<<"%";
         fl::logger->Message() << "The score per class is ";
         for(index_t i=0; i<points_per_class.size(); ++i) {
           fl::logger->Message()<<"Class: "<<i<<", points: "<<points_per_class[i]
@@ -1299,7 +1306,7 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
     "OPTIONAL file containing query positions.  If omitted, KDE computes "
     "the leave-one-out density at each reference point."
   )(
-    "query_labels_in", 
+    "queries_labels_in", 
     boost::program_options::value<std::string>()->default_value(""),
     "OPTIONAL file containing the labels of the query points. If you provide "
     "labels for the query points then an accuracy score of KDA will be generated "
@@ -1332,7 +1339,7 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
   )(
     "auc",
     boost::program_options::value<bool>()->default_value(true),
-    "OPTIONAL if this flag is set true then it computer the "
+    "OPTIONAL if this flag is set true then it computes the "
     "Area Under Curve (AUC) score"
   )(
     "auc_label",
@@ -1391,16 +1398,12 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
     boost::program_options::value<index_t>()->default_value(5),
     "OPTIONAL The number of line seaches used for L-BFGS optimizer."
   )(
-    "log",
-    boost::program_options::value<std::string>()->default_value(""),
-    "A file to receive the log, or omit for stdout."
-  )(
     "result_out",
     boost::program_options::value<std::string>(),
     "A file to export the results of KDA. KDA is a classification method "
     "So it outputs the labels of the winning class for every query point. "
     "Labels are enumerated in an ascending order, so if you set the following flags "
-    "--references_in=classA.txt --references_in=classB.txt --references_in=classC.txt "
+    "--references_in=classA.txt,classB.txt,classC.txt "
     "then KDA will classify each query point according to the maximum KDE score with respect "
     "to each reference file. If KDE for point i computed on classC.txt has the higher score, then "
     "the ith row of the result_out file will be 2, if the highest KDE score is classA.txt then it will be 0 "
@@ -1412,14 +1415,6 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
     "OPTIONAL This is the priors for using KDA, It is a comma or colon separated list"
     "If you omit it, then the program assumes equal priors for every class. "
     "For example --priors=0.2,0.8"
-  )(
-    "loglevel",
-    boost::program_options::value<std::string>()->default_value("debug"),
-    "Level of log detail.  One of:\n"
-    "  debug: log everything\n"
-    "  verbose: log messages and warnings\n"
-    "  warning: log only warnings\n"
-    "  silent: no logging"
   );
 
   boost::program_options::variables_map vm;
@@ -1441,8 +1436,8 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
   }
   boost::program_options::notify(vm);
   if (vm.count("help")) {
-    std::cout << fl::DISCLAIMER << "\n";
-    std::cout << desc << "\n";
+    fl::logger->Message() << fl::DISCLAIMER << "\n";
+    fl::logger->Message() << desc << "\n";
     return true;
   }
   // Validate the  Only immediate dying is allowed here, the

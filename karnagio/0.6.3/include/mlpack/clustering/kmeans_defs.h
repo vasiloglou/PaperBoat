@@ -619,6 +619,7 @@ namespace fl {
       "search_method",
       boost::program_options::value<std::string>()->default_value("xmeans"),
       "The method used to find optimal K if k_max and k_min are specified."
+      " Valid methods are xmeans and cv (cross validation"
       )(
       "k_clusters",
       boost::program_options::value<index_t>()->default_value(-1),
@@ -762,8 +763,8 @@ namespace fl {
 
     boost::program_options::notify(vm);
     if (vm.count("help")) {
-      std::cout << fl::DISCLAIMER << "\n";
-      std::cout << desc << "\n";
+      fl::logger->Message() << fl::DISCLAIMER << "\n";
+      fl::logger->Message() << desc << "\n";
       return 1;
     }
 

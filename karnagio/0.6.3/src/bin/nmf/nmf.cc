@@ -28,7 +28,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "fastlib/workspace/workspace_defs.h"
 
 int main(int argc, char *argv[]) {
-
+  fl::logger->SetLogger("debug");
   // Convert C input to C++; skip executable name for Boost
   std::vector<std::string> args(argv + 1, argv + argc);
   try {

@@ -456,9 +456,26 @@ namespace fl { namespace ml {
     fl::logger->Message()<<"Loading data from "<< vm["references_in"].as<std::string>()<<std::endl;
     ws->Attach(vm["references_in"].as<std::string>(),
         &references);
- 
+    if (vm.count("targets_in")) {
+      boost::shared_ptr<typename WorkSpaceType::DefaultTable_t> targets;
+      ws->Attach(vm["targets_in"].as<std::string>(), &targets);
+      boost::shared_ptr<TableType> references1;
+      ws->template TieLabels<1>(references, targets, ws->GiveTempVarName(), &references1);
+      typename TableType::template IndexArgs<fl::math::LMetric<2> > index_args;
+      // at some point we should change that and do the indexing
+      // according to the diameter. This is implemented but not tested yet
+      index_args.leaf_size=20;
+      references1->IndexData(index_args);
+      references=references1;
+    }
     std::string task=vm["run_mode"].as<std::string>();
     if (task=="train") {
+      if (vm["predictions_out"].as<std::string>()!="") {
+        fl::logger->Die()<<"--predictions_out cannot be present in train mode";
+      }
+      if (vm["reliabilties_out"].as<std::string>()!="") {
+        fl::logger->Die()<<"--reliabilities_out cannot be present in train mode";
+      }
       double ref_split_factor=vm["ref_split_factor"].as<double>();
       if (ref_split_factor<=0 || ref_split_factor>1) {
         fl::logger->Die()<<"--ref_split_factor(="<<ref_split_factor
@@ -541,6 +558,9 @@ namespace fl { namespace ml {
       }
     } else {
       if (task=="eval") {
+        if (vm["data_table_out"].as<std::string>()!="") {
+          fl::logger->Die()<<"--data_table_out cannot be present in eval mode";
+        }
         if (vm["queries_in"].as<std::string>()=="") {
           fl::logger->Die()<<"You must provide a query set through option "
             "--queries_in"<<std::endl;
@@ -585,6 +605,18 @@ namespace fl { namespace ml {
                        20);
         boost::shared_ptr<TableType> references;
         ws->Attach(vm["references_in"].as<std::string>(), &references);        
+
+        boost::shared_ptr<typename WorkSpaceType::DefaultTable_t> targets;
+        bool is_targets=false;
+        if (vm.count("targets_in")) {
+          ws->Attach(vm["targets_in"].as<std::string>(), &targets);
+          is_targets=true;
+          if (targets->n_entries()!=references->n_entries()) {
+            fl::logger->Die()<<"--targets_in and --references_in must have the same "
+              "number of points";
+          }
+        };
+        
         boost::shared_ptr<TableType> scaled_references;
         std::string scaled_references_name=ws->GiveTempVarName();
         ws->Attach(scaled_references_name,
@@ -592,10 +624,14 @@ namespace fl { namespace ml {
             references->sparse_sizes(),
             0,
             &scaled_references);
+        
         for(index_t i=0; i< queries->n_entries(); ++i) {
           typename TableType::Point_t point1, point2;
           references->get(i, &point1);
           fl::la::DotMul<fl::la::Init>(bandwidths.template dense_point<double>(), point1, &point2);
+          if (is_targets) {
+            point2.meta_data(). template get<1>()=targets->get(i, (index_t)0);
+          } 
           scaled_references->push_back(point2);
         }
         ws->Purge(scaled_references_name);
@@ -699,7 +735,12 @@ namespace fl { namespace ml {
     )(
       "references_in",
       boost::program_options::value<std::string>()->default_value(""),
-      "the power load data "
+      "the reference data "
+    )(
+      "targets_in",
+      boost::program_options::value<std::string>()->default_value(""),
+      "if your target values (dependent variable) is not encoded in the "
+      "--references_in then you should provide them with this option"
     )(
       "queries_in",
       boost::program_options::value<std::string>()->default_value(""),
@@ -794,8 +835,8 @@ namespace fl { namespace ml {
     }
     boost::program_options::notify(vm);
     if (vm.count("help")) {
-      std::cout << fl::DISCLAIMER << "\n";
-      std::cout << desc << "\n";
+      fl::logger->Message() << fl::DISCLAIMER << "\n";
+      fl::logger->Message() << desc << "\n";
       return true;
     }
 

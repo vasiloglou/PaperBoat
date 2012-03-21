@@ -69,7 +69,7 @@ class Stratum {
         do {
           valid_index = true;
           random_index = fl::math::Random(table->get_node_begin(node),
-                                          table->get_node_end(node));
+                                          table->get_node_end(node)-1);
 
           // Examine the LOO candidate lists, and see if it is one of
           // them, in which case we repeat.

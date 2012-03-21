@@ -22,7 +22,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
     }
     std::string session_id(session_tag, lenSession_tag);
     std::string args(arguments, lenArguments);
-    ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<double> >(
+    fl::hpcc::ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<double> >(
          args,
          &__result,
          &__lenResult); 
@@ -41,7 +41,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
     }
     std::string session_id(session_tag, lenSession_tag);
     std::string args(arguments, lenArguments);
-    ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(
+    fl::hpcc::ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(
          args,
          &__result,
          &__lenResult); 
@@ -60,7 +60,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
     }
     std::string session_id(session_tag, lenSession_tag);
     std::string args(arguments, lenArguments);
-    ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<int32> >(
+    fl::hpcc::ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<int32> >(
          args,
          &__result,
          &__lenResult); 
@@ -80,7 +80,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
     }
     std::string session_id(session_tag, lenSession_tag);
     std::string args(arguments, lenArguments);
-    ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint32> >(
+    fl::hpcc::ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint32> >(
          args,
          &__result,
          &__lenResult); 
@@ -99,7 +99,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
     }
     std::string session_id(session_tag, lenSession_tag);
     std::string args(arguments, lenArguments);
-    ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<int64> >(
+    fl::hpcc::ws[session_id]->ExportAllDenseHPCCDataSets<fl::hpcc::SetDatum<int64> >(
          args,
          &__result,
          &__lenResult); 
@@ -123,8 +123,6 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
           DATASET(Types.Int32LDatum) int32ws,
           STRING arguments,
           STRING session_id) := BEGINC++
-      #option once
-      #option pure      
 
       #include <sstream>
       #include "workspace/workspace.h"
@@ -137,8 +135,8 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
      
       try {
         PB_ECL_LOAD_DATA_MACRO
-        ws[session]->IndexAllReferencesQueries(vec);
-        fl::ml::AllKN<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
+        fl::ml::AllKN<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
@@ -163,19 +161,25 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
           DATASET(Types.Int32LDatum) int32ws,
           STRING arguments,
           STRING session_id) := BEGINC++
+
       #include <sstream>
-      #include "workspace/set_datum.h"
+      #include "workspace/workspace.h"
+      #include "fastlib/base/logger.h"
       #include "mlpack/kde/kde.h"
+      #include "workspace/set_datum.h"
+      #include "workspace/macros.h"
+
       #body
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        ws[session]->IndexAllReferencesQueries(vec);
-        fl::ml::Kde<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
+        fl::ml::Kde<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
-        exit(1);
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
         return 1;
       }
     ENDC++;
@@ -189,7 +193,45 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
   END;
 
- 
+  EXPORT Npr(STRING arguments) := MODULE
+   SHARED INTEGER PbNpr(DATASET(Types.RealLDatum) realws,
+          DATASET(Types.Uint8LDatum) uint8ws,
+          DATASET(Types.Int32LDatum) int32ws,
+          STRING arguments,
+          STRING session_id) := BEGINC++
+
+      #include <sstream>
+      #include "workspace/workspace.h"
+      #include "fastlib/base/logger.h"
+      #include "mlpack/nonparametric_regression/nonparametric_regression.h"
+      #include "workspace/set_datum.h"
+      #include "workspace/macros.h"
+
+      #body
+
+      try {
+        PB_ECL_LOAD_DATA_MACRO
+        fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
+        fl::ml::NonParametricRegression<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
+        return 0;
+      } 
+      catch(...) {
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;
+      }
+    ENDC++;
+
+    SHARED STRING session_id := GenSession();
+    EXPORT INTEGER call :=PbNpr(realws, uint8ws, int32ws, arguments, session_id);
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+
+  END;
+
+
   EXPORT KMeans(STRING arguments) := MODULE
     SHARED INTEGER PbKMeans(DATASET(Types.RealLDatum) realws,
           DATASET(Types.Uint8LDatum) uint8ws,
@@ -198,16 +240,18 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
           STRING session_id) := BEGINC++
       #include <sstream>
       #include "workspace/set_datum.h"
-      #include "mlpack/kmeans/kmeans.h"
+      #include "mlpack/clustering/kmeans.h"
       #body
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        ws[session]->IndexAllReferencesQueries(vec);
-        fl::ml::KMeans<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
+        fl::ml::KMeans<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
         return 1;
       }
     ENDC++;
@@ -220,6 +264,39 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
     EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
 
   END;
+
+  EXPORT Regression(STRING arguments) := MODULE
+    SHARED INTEGER PbLasso(DATASET(Types.RealLDatum) realws,
+          DATASET(Types.Uint8LDatum) uint8ws,
+          DATASET(Types.Int32LDatum) int32ws,
+          STRING arguments,
+          STRING session_id) := BEGINC++
+      #include <sstream>
+      #include "workspace/set_datum.h"
+      #include "mlpack/regression/linear_regression.h"
+      #body
+
+      try {
+        PB_ECL_LOAD_DATA_MACRO
+        fl::ml::LinearRegression<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
+        return 0;
+      } 
+      catch(...) {
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;      
+     }
+    ENDC++;
+
+    SHARED STRING session_id := GenSession();
+    EXPORT INTEGER call :=PbLasso(realws, uint8ws, int32ws, arguments, session_id);
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+
+  END;
+
 
   EXPORT Lasso(STRING arguments) := MODULE
     SHARED INTEGER PbLasso(DATASET(Types.RealLDatum) realws,
@@ -234,11 +311,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        fl::ml::Lasso<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::ml::Lasso<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
-        return 1;
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;       
       }
     ENDC++;
 
@@ -264,11 +343,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        fl::ml::Nmf<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::ml::Nmf::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
-        return 1;
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;       
       }
     ENDC++;
 
@@ -293,11 +374,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        fl::ml::Svd<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::ml::Svd<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
-        return 1;
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;       
       }
     ENDC++;
 
@@ -322,12 +405,14 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        ws[session]->IndexAllReferencesQueries(vec);
-        fl::ml::Svm<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
+        fl::ml::Svm<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
-        return 1;
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;       
       }
     ENDC++;
 
@@ -352,11 +437,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       try {
         PB_ECL_LOAD_DATA_MACRO
-        fl::ml::OrthoRangeSearch<boost::mpl::void_>::Run(ws[session].get(), vec);
+        fl::ml::OrthoRangeSearch<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
         return 0;
       } 
       catch(...) {
-        return 1;
+        boost::mutex::scoped_lock lock(*fl::global_exception_mutex);
+        fl::global_exception=boost::current_exception();
+        return 1;       
       }
     ENDC++;
 
@@ -370,35 +457,4 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
 END;
 
-DATASET(Types.RealLDatum) TestPBWorkSpace(DATASET(Types.RealLDatum) realws, 
-        INTEGER n_attributes,
-        INTEGER n_entries) := BEGINC++
-  #include "workspace/workspace.h"
-  #include "workspace/numeric_datum.h"
-  #include "workspace/set_datum.h"
-  
-#body
-  ws.set_schedule_mode(2);
-  ws.LoadDenseHPCCDataSet<fl::hpcc::SetDatum<double> >(
-          "paparia",
-          n_attributes,
-          n_entries,
-          realws);
-
-  ws.ExportDenseHPCCDataSet<fl::hpcc::SetDatum<double> >(std::string("paparia"),&__result ,&__lenResult);
-ENDC++;
-
-
-x:=DATASET([{0, 0, 0.1, 4},
-            {0, 1, 0.2, 4},
-            {1, 0, 1.1, 4},
-            {1, 1, 1.2, 4},
-            {2, 0, 2.1, 4},
-            {2, 1, 2.2, 4},
-            {3, 0, 3.1, 4},
-            {3, 1, 3.2, 4},
-            {4, 0, 4.1, 4},
-            {4, 1, 4.2, 4}], Types.RealLDatum);
-
-y:=TestPBWorkSpace(x, 5, 2);
 

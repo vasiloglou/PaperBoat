@@ -8,6 +8,7 @@ EXPORT UnDefinitions() :=  MACRO
     #include "workspace/macros.h"
     #body
     PB_ECL_EXPORT_LOG_MACRO  
+    fl::logger->SetLogger("silent");
   ENDC++;
 
   UnDefineWorkSpace();

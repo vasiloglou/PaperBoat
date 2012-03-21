@@ -290,7 +290,7 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Main(
     }
 
     // Use the coeffs_in and load the model.
-    boost::shared_ptr<typename DataAccessType::template TableVector<double> > coefficients_table;
+    boost::shared_ptr<typename DataAccessType::DefaultTable_t> coefficients_table;
     std::string input_coeffs = vm["input_coeffs"].as<std::string>();
     data->Attach(vm["input_coeffs"].as<std::string>(), &coefficients_table);
 
@@ -306,7 +306,7 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Main(
     }
 
     // Open the output table for the computed predictions.
-    boost::shared_ptr<typename DataAccessType::template TableVector<double> > predictions_out_table;
+    boost::shared_ptr<typename DataAccessType::DefaultTable_t> predictions_out_table;
     data->Attach(vm["predictions_out"].as<std::string>(),
                  std::vector<index_t>(1, 1),
                  std::vector<index_t>(),
@@ -319,14 +319,14 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Main(
       query_table->get(i, &query_point);
 
       // Get the output point.
-      typename DataAccessType::template TableVector<double>::Point_t
+      typename DataAccessType::DefaultTable_t::Point_t
       output_point;
       predictions_out_table->get(i, &output_point);
 
       // Computed prediction.
       double prediction = 0;
       for (int j = 0; j < query_point.length(); j++) {
-        typename DataAccessType::template TableVector<double>::Point_t
+        typename DataAccessType::DefaultTable_t::Point_t
         coeff_point;
         coefficients_table->get(j, &coeff_point);
         if (j != input_coeffs_bias_term_index) {
@@ -755,7 +755,7 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
   fl::logger->Message()<<"All regressions are done"<<std::endl;
   // Export the result.
   fl::logger->Message()<<"Exporting the results"<<std::endl;
-  boost::shared_ptr<typename DataAccessType::template TableVector<double> > coefficients_table,
+  boost::shared_ptr<typename DataAccessType::DefaultTable_t > coefficients_table,
   standard_errors_table, confidence_interval_los_table,
   confidence_interval_his_table, t_statistics_table, p_values_table,
   adjusted_r_squared_table, f_statistic_table, r_squared_table,
@@ -918,10 +918,10 @@ int fl::ml::LinearRegression<boost::mpl::void_>::Core<TableType1>::Branch(
     index_t attribute=0;
     for(index_t i=0; i<coefficients.size()+(prediction_index<0?0:1); ++i) {
       if (i!=prediction_index) {
-        coefficients_table->set(i, coefficients[attribute]);
+        coefficients_table->set(i, 0, coefficients[attribute]);
         attribute++;
       } else {
-        coefficients_table->set(i, 0);
+        coefficients_table->set(i, 0, 0);
       }
     }
 
@@ -1194,8 +1194,8 @@ bool fl::ml::LinearRegression<boost::mpl::void_>::ConstructBoostVariableMap(
   }
   boost::program_options::notify(*vm);
   if (vm->count("help")) {
-    std::cout << fl::DISCLAIMER << "\n";
-    std::cout << desc << "\n";
+    fl::logger->Message() << fl::DISCLAIMER << "\n";
+    fl::logger->Message() << desc << "\n";
     return true;
   }
 

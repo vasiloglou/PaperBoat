@@ -1297,8 +1297,8 @@ int AllKN<boost::mpl::void_>::Main(
 
   boost::program_options::notify(vm);
   if (vm.count("help")) {
-    std::cout << fl::DISCLAIMER << "\n";
-    std::cout << desc << "\n";
+    fl::logger->Message() << fl::DISCLAIMER << "\n";
+    fl::logger->Message() << desc << "\n";
     return 1;
   }
   

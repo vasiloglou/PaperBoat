@@ -278,9 +278,12 @@ void SparseNmf<NmfArgs>::SparseProjection_(
     m_point.Init(length);
     m_point.SetZero();
     for(index_t i=0; i<length; ++i) {
-      DEBUG_ASSERT(length-zeta_size);
+      double denom=length-zeta_size;
+      if (denom==0) {
+        denom=1;
+      }
       if (zeta[i]==false) {
-        m_point[i]=required_l1_norm/(length-zeta_size);
+        m_point[i]=required_l1_norm/(denom);
       }
     }
     // calculating alpha
@@ -321,7 +324,11 @@ void SparseNmf<NmfArgs>::SparseProjection_(
     for(index_t i=0; i<length; ++i) {
       c+=s_point[i];
     }
-    c=(c-required_l1_norm)/(length-zeta_size);
+    double denom=length-zeta_size;
+    if (denom==0) {
+      denom=1;
+    }
+    c=(c-required_l1_norm)/(denom);
     DEBUG_ASSERT(!boost::math::isnan(c));
     for(index_t i=0; i<length; ++i) {
       if (zeta[i]==false) {
@@ -364,7 +371,7 @@ void SparseNmf<NmfArgs>::BatchSparseProjection_(
 
 template<typename NmfArgs>
 void SparseNmf<NmfArgs>::Train(const std::string &mode) {
-
+  FL_SCOPED_LOG(Train);
   // Work with the temporary vectors in place for optimization. The W
   // factor is layed out as the column major vector, the H factor as
   // the row major vector.
@@ -387,11 +394,14 @@ void SparseNmf<NmfArgs>::Train(const std::string &mode) {
       // (row, i)-th element of the table matches the dot product
       // between the row-th row of w factor and the i-th column of the
       // h-factor.
-      table_l2_norm += fl::math::Sqr(it.value());
+      table_l2_norm += fl::math::Sqr((double)it.value());
       num_of_elements++;
     }
   }
-
+  if (table_l2_norm==0) {
+    fl::logger->Die()<<"The matrix you are trying to decompose has zero norm, "
+      "something went wrong";
+  }
   // Initialize the starting vectors. For the H factor, have each of
   // its row to be unit L2 norm, apply the sparseness constraint.
   for (int i = 0; i < current_w_factor.length(); i++) {

@@ -221,22 +221,7 @@ int Nmf::Main(DataAccessType *data,
    " specifies the columns of V to be evaluated. For example if we need to evaluate"
    " V_{1,2}, V_{1,55}, V_{4,33}, V_{4,55}, then you should use the following syntax"
    " --row=1,1,4,4 --col=2,55,33,55 . Notice that both lists must have the same size."
-   " You can also specify a file name that has the indices, instead of a list.")
-  ("point",
-   boost::program_options::value<std::string>()->default_value("dense"),
-   "Point type used by allkn.  One of:\n"
-   "  dense, dense_sparse, categorical, dense_categorical,"
-   "  sparse, sparse_float, sparse_uint8, sparse_uint16")
-  ("tree",
-   boost::program_options::value<std::string>()->default_value("balltree"),
-   "Temporary code to incorporate tree, since branch_on_table is not use\n")
-  ("loglevel",
-   boost::program_options::value<std::string>()->default_value("debug"),
-   "Level of log detail.  One of:\n"
-   "  debug: log everything\n"
-   "  verbose: log messages and warnings\n"
-   "  warning: log only warnings\n"
-   "  silent: no logging");
+   " You can also specify a file name that has the indices, instead of a list.");
 
   boost::program_options::variables_map vm;
   boost::program_options::command_line_parser clp(args);
@@ -257,8 +242,8 @@ int Nmf::Main(DataAccessType *data,
 
   boost::program_options::notify(vm);
   if (vm.count("help")) {
-    std::cout << fl::DISCLAIMER << "\n";
-    std::cout << desc << "\n";
+    fl::logger->Message() << fl::DISCLAIMER << "\n";
+    fl::logger->Message() << desc << "\n";
     return 1;
   }
 

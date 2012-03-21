@@ -39,7 +39,6 @@ namespace fl {
         boost::program_options::variables_map &vm) {
       FL_SCOPED_LOG(Svm);
       std::string task = vm["run_mode"].as<std::string>();
-      std::string parameters_in = vm["parameters_in"].as<std::string>();
 
       // CHECK THAT INPUT VALUES/COMBINATIONS MAKE SENSE
       if(task == "train") {
@@ -48,9 +47,6 @@ namespace fl {
           return 1;
         }
         
-        if(vm["parameters_out"].as<std::string>() == "") {
-          fl::logger->Warning() << "--parameters_out not provided, parameters like C and Bias will not be saved.";
-        }
         /*if(vm["support_vectors_out"].as<std::string>() == "") {
         fl::logger->Warning() << "--support_vectors_out not provided, support vectors will not be saved.";
         }*/
@@ -61,9 +57,6 @@ namespace fl {
         }
         if (vm["results_out"].as<std::string>() == "") {
           fl::logger->Die() << "--results_out is required in eval mode.";
-        }
-        if(parameters_in == "") {
-          fl::logger->Die() << "Missing required --parameters_in not provided.";
         }
       } else {
         fl::logger->Die() << "Unknown task. Please see usage with --help option.";
@@ -114,7 +107,7 @@ namespace fl {
       }
 
       if (vm["labels_in"].as<std::string>()!="") {
-        boost::shared_ptr<typename DataAccessType::template TableVector<signed char> > labels;
+        boost::shared_ptr<typename DataAccessType::IntegerTable_t> labels;
         data->Attach(vm["labels_in"].as<std::string>(), &labels);
         if (task=="train") {
           boost::shared_ptr<TableType> reference_table1;
@@ -150,6 +143,14 @@ namespace fl {
           fl::math::LMetric<2> metric;
           kernel.Init(bandwidth, metric);
           if (task=="train") {
+            if (vm["margins_out"].as<std::string>()!="") {
+              fl::logger->Die()<<"--margins_out is not a valid option for"
+                " --task=train";
+            }
+            if (vm["prediction_accuracy_out"].as<std::string>()!="") {
+              fl::logger->Die()<<"--prediction_accuracy_out is not a valid option for"
+                " --task=train";
+            }
             typename Svm<TableType>::template Trainer<fl::math::GaussianDotProduct<
                 typename TableType::CalcPrecision_t, fl::math::LMetric<2> >  > trainer;
             trainer.set_reference_table(reference_table.get());
@@ -160,12 +161,15 @@ namespace fl {
             trainer.set_bandwidth_overload_factor(bandwidth_overload_factor);
             std::map<index_t, double> support_vectors;
             boost::shared_ptr<TableType> reduced_table;
+            fl::logger->Message()<<"Starting training"<<std::endl;
             trainer.Train(&support_vectors, &reduced_table);
+            fl::logger->Message()<<"Finished training"<<std::endl;
             std::string alphas_out=vm["alphas_out"].as<std::string>();
             std::string support_vectors_out=vm["support_vectors_out"].as<std::string>();
             boost::shared_ptr<typename DataAccessType::DefaultTable_t> alphas_table;
             if (alphas_out!="" || support_vectors_out!="") {
               if (alphas_out!="") {
+                fl::logger->Message()<<"Exporting alphas to "<<alphas_out<<std::endl;
                 data->Attach(alphas_out, 
                     std::vector<index_t>(1,1),
                     std::vector<index_t>(),
@@ -174,6 +178,8 @@ namespace fl {
               }
               boost::shared_ptr<TableType> sv_table;
               if (support_vectors_out!="") {
+                fl::logger->Message()<<"Exporting support vectors to "
+                  <<support_vectors_out<<std::endl;
                 data->Attach(support_vectors_out, 
                     reference_table->dense_sizes(),
                     reference_table->sparse_sizes(),
@@ -252,6 +258,7 @@ namespace fl {
             boost::shared_ptr<typename DataAccessType::DefaultTable_t> margins_table;
             std::string margins_out=vm["margins_out"].as<std::string>();
             if (margins_out!="") {
+              fl::logger->Message()<<"Exporting margins to "<<margins_out<<std::endl;
               data->Attach(margins_out, 
                     std::vector<index_t>(1,1),
                     std::vector<index_t>(), 
@@ -307,10 +314,6 @@ namespace fl {
         boost::program_options::value<std::string>()->default_value(""),
         "The file to which the weights to the linear SVM will be output."
         )(
-        "parameters_in", 
-        boost::program_options::value<std::string>()->default_value(""),
-        "The file containing the parameters when task is one of test or train-test."
-        )(
         "run_mode", 
         boost::program_options::value<std::string>()->default_value("train"),
         "One of train or eval"
@@ -350,19 +353,7 @@ namespace fl {
         )(
         "prediction_accuracy_out",
         boost::program_options::value<std::string>()->default_value(""),
-        "OPTIONAL. the file to store the predictin accuracy"
-        )(
-        "log",
-        boost::program_options::value<std::string>()->default_value(""),
-        "A file to receive the log, or omit for stdout."
-        )(
-        "loglevel",
-        boost::program_options::value<std::string>()->default_value("debug"),
-        "Level of log detail.  One of:\n."
-        "  debug: log everything\n."
-        "  verbose: log messages and warnings\n."
-        "  warning: log only warnings\n."
-        "  silent: no logging."
+        "OPTIONAL. the file to store the prediction accuracy"
         );
 
       boost::program_options::variables_map vm;
@@ -383,8 +374,8 @@ namespace fl {
       }
       boost::program_options::notify(vm);
       if (vm.count("help")) {
-        std::cout << fl::DISCLAIMER << "\n";
-        std::cout << desc << "\n";
+        fl::logger->Message() << fl::DISCLAIMER << "\n";
+        fl::logger->Message() << desc << "\n";
         return 1;
       }
 

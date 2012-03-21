@@ -386,8 +386,8 @@ void LinearRegressionModel<TableType, do_naive_least_squares>::ExportHelper_(
   const fl::data::MonolithicPoint<double> &source,
   PointType &destination) const {
 
-  for (int i = 0; i < destination.size(); i++) {
-    destination.set(i, 0.0);
+  for (int i = 0; i < destination.n_entries(); i++) {
+    destination.set(i, 0, 0.0);
   }
 
   // Put the bias term at the position of the prediction index, if
@@ -395,7 +395,7 @@ void LinearRegressionModel<TableType, do_naive_least_squares>::ExportHelper_(
   // term, if available.
   if (table_->n_attributes() + 1 == source.length()) {
     destination.set(
-      factorization_.active_right_hand_side_column_index(),
+      factorization_.active_right_hand_side_column_index(), 0,
       source[ factorization_.active_column_indices().size() - 1]);
   }
 
@@ -408,7 +408,7 @@ void LinearRegressionModel<TableType, do_naive_least_squares>::ExportHelper_(
 
     // Skip the bias term.
     if (*active_it < table_->n_attributes()) {
-      destination.set(*active_it, source[j]);
+      destination.set(*active_it, 0, source[j]);
     }
   }
 }
@@ -459,16 +459,16 @@ void LinearRegressionModel<TableType, do_naive_least_squares>::Export(
   }
   // Create the table for adjusted r-square statistic.
   if (adjusted_r_squared_table!=NULL) {
-    adjusted_r_squared_table->set(0, adjusted_r_squared_);
+    adjusted_r_squared_table->set(0, 0, adjusted_r_squared_);
   }
   if (f_statistic_table!=NULL) {
-    f_statistic_table->set(0, f_statistic_);
+    f_statistic_table->set(0, 0, f_statistic_);
   }
   if (r_squared_table!=NULL) {
-    r_squared_table->set(0, r_squared_);
+    r_squared_table->set(0, 0, r_squared_);
   }
   if (sigma_table!=NULL) {
-    sigma_table->set(0, sigma_);
+    sigma_table->set(0, 0, sigma_);
   }
 }
 

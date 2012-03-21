@@ -28,35 +28,35 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #define PB_ECL_LOAD_DATA_MACRO \
       std::string session(session_id, lenSession_id);\
-      ws[session].reset(new fl::hpcc::WorkSpace());\
-      ws[session]->set_schedule_mode(2);\
+      fl::hpcc::ws[session].reset(new fl::hpcc::WorkSpace());\
+      fl::hpcc::ws[session]->set_schedule_mode(2);\
       std::string args(arguments, lenArguments); \
-      ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<double> >(args, \
+      fl::hpcc::ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<double> >(args, \
           static_cast<const char*>(realws), \
           lenRealws); \
                       \
-      ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(args, \
+      fl::hpcc::ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(args, \
           static_cast<const char*>(uint8ws), \
           lenUint8ws); \
-      ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<int32> >(args, \
+      fl::hpcc::ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<int32> >(args, \
           static_cast<const char*>(int32ws), \
           lenInt32ws); \
                        \
-      ws[session]->LoadAllSparseHPCCDataSets<fl::hpcc::SetDatum<double> >(args, \
+      fl::hpcc::ws[session]->LoadAllSparseHPCCDataSets<fl::hpcc::SetDatum<double> >(args, \
           static_cast<const char*>(realws), \
           lenRealws); \
-      ws[session]->LoadAllSparseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(args, \
+      fl::hpcc::ws[session]->LoadAllSparseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(args, \
           static_cast<const char*>(uint8ws), \
           lenUint8ws); \
                        \
-      ws[session]->LoadAllSparseHPCCDataSets<fl::hpcc::SetDatum<int32> >(args, \
+      fl::hpcc::ws[session]->LoadAllSparseHPCCDataSets<fl::hpcc::SetDatum<int32> >(args, \
           static_cast<const char*>(int32ws), \
           lenInt32ws); \
       std::vector<std::string> vec = fl::SplitString(args, " ");
 
 #define PB_ECL_EXPORT_LOG_MACRO \
-      __result=(char*)rtlMalloc(str_stream.str().size()); \
-      memcpy(__result, str_stream.str().data(), str_stream.str().size()); \
-      __lenResult=str_stream.str().size();\
+      __result=(char*)rtlMalloc(fl::hpcc::str_stream.str().size()); \
+      memcpy(__result, fl::hpcc::str_stream.str().data(), fl::hpcc::str_stream.str().size()); \
+      __lenResult=fl::hpcc::str_stream.str().size();\
 
 #endif

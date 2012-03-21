@@ -40,6 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "fastlib/table/default/sparse/labeled/balltree/uint16/table.h"
 #include "fastlib/table/default/sparse/labeled/balltree/float32/table.h"
 #include "fastlib/data/linear_algebra.h"
+#include "fastlib/util/string_utils.h"
 
 namespace fl {
 namespace table {
@@ -49,9 +50,12 @@ namespace table {
     if (vm.count("references_in")==0) {
       fl::logger->Die() <<"No --references_in given, cannot run algorithm";
     }
+    std::vector<std::string> tokens=fl::SplitString(
+       vm["references_in"].as<std::string>(), ",:");
+    std::string reference_name=tokens[0];
     try {
       data->template TryToAttach<fl::table::dense::labeled::kdtree::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
         return AlgorithmType::template Core <
              fl::table::dense::labeled::kdtree::Table >::Main(data, vm);
     }
@@ -60,7 +64,7 @@ namespace table {
     }
     try {
       data->template TryToAttach<fl::table::dense::labeled::balltree::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
         return AlgorithmType::template Core <
              fl::table::dense::labeled::kdtree::Table >::Main(data, vm);
     }
@@ -69,7 +73,7 @@ namespace table {
     }
     try {
       data->template TryToAttach<fl::table::sparse::labeled::balltree::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
       return AlgorithmType::template Core <
                fl::table::sparse::labeled::balltree::Table >::Main(data, vm);
     }
@@ -78,7 +82,7 @@ namespace table {
     }
     try {
       data->template TryToAttach<fl::table::dense_sparse::labeled::balltree::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
       return AlgorithmType::template Core <
              fl::table::dense_sparse::labeled::balltree::Table >::Main(data, vm);
      
@@ -88,7 +92,7 @@ namespace table {
     }
     try{
       data->template TryToAttach<fl::table::categorical::labeled::balltree::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
       return AlgorithmType::template Core <
              fl::table::categorical::labeled::balltree::Table >::Main(data, vm);
     }
@@ -97,7 +101,7 @@ namespace table {
     try {
       //fl::logger->Die()<<"You don't have a valid license for dense_categorical data";
       data->template TryToAttach<fl::table::dense_categorical::labeled::balltree::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
       return AlgorithmType::template Core <
           fl::table::dense_categorical::labeled::balltree::Table >::Main(data, vm);
     }
@@ -105,15 +109,16 @@ namespace table {
     }  
     try {
       data->template TryToAttach<fl::table::sparse::labeled::balltree::uint8::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
       return AlgorithmType::template Core <
         fl::table::sparse::labeled::balltree::uint8::Table >::Main(data, vm);   
     }
     catch(const fl::TypeException &e) {
     }
+
     try {
       data->template TryToAttach<fl::table::sparse::labeled::balltree::uint16::Table>(
-          vm["references_in"].as<std::string>());
+          reference_name);
       return AlgorithmType::template Core <
         fl::table::sparse::labeled::balltree::uint16::Table >::Main(data, vm);   
     }

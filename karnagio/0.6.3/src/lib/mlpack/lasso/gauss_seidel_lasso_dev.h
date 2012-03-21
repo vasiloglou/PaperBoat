@@ -64,13 +64,17 @@ template<typename TableType1>
 void LassoModel<TableType>::Export(TableType1 *coeff_table) {
 
   // Put the intercept at the very end.
+  typename TableType1::Point_t point;
   for (int j = 0; j < static_cast<int>(coefficients.size()); j++) {
-    coeff_table->set(j, 0);
+    coeff_table->get(j, &point);
+    point.set(0, 0.0);
   }
-  coeff_table->set(coeff_table->n_entries() - 1, coefficients[0]);
+  coeff_table->get(coeff_table->n_entries() - 1, &point);
+  point.set(0, coefficients[0]);
 
   for (index_t j = 1; j < static_cast<index_t>(coefficients.size()); j++) {
-    coeff_table->set(predictor_indices[j - 1], coefficients[j]);
+    coeff_table->get(predictor_indices[j - 1], &point);
+    point.set(0, coefficients[j]);
   }
 }
 
