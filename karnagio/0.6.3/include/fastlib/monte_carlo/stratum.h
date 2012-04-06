@@ -32,7 +32,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace fl {
 namespace ml {
-
 template<typename TableType>
 class Stratum {
 

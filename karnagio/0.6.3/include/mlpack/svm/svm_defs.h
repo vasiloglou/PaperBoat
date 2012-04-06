@@ -138,6 +138,10 @@ namespace fl {
         fl::logger->Message() << "Using Linear Kernel.";
       } else {
         if(kernel_type == "gaussian") {
+          if (bandwidth==0) {
+            fl::logger->Die()<<"For the Gaussian kernel the bandwidth must "
+              <<"be set to a value greater than zero";
+          }
           fl::logger->Message() << "Using Gaussian Kernel with bandwidth: " << bandwidth;
           fl::math::GaussianDotProduct<double, fl::math::LMetric<2> > kernel;
           fl::math::LMetric<2> metric;
@@ -190,16 +194,18 @@ namespace fl {
               std::map<index_t, double>::const_iterator it;
               typename DataAccessType::DefaultTable_t::Point_t a_point;
               typename TableType::Point_t p1, p2;
+              index_t counter=0;
               for(it=support_vectors.begin(); it!=support_vectors.end(); ++it) {
                 if (alphas_out!="") {
-                  alphas_table->get(it->first, &a_point);
+                  alphas_table->get(counter, &a_point);
                   a_point.set(0, it->second);
                 }
                 if (support_vectors_out!="") {
                   reduced_table->get(it->first, &p1);
-                  sv_table->get(it->first, &p2);
+                  sv_table->get(counter, &p2);
                   p1.CopyValues(p2);
                 }
+                counter++;
               }
             }
             if (alphas_out!="") {

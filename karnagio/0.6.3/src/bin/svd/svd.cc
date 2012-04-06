@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
   try {
     // Use a generic workspace model
     fl::ws::WorkSpace ws;
+    ws.set_schedule_mode(2);
     ws.set_pool(1);
     ws.LoadAllTables(args);
     fl::ml::Svd<boost::mpl::void_>::Run(&ws, args);

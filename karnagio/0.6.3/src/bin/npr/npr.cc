@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
     // Use a generic workspace model
     fl::Logger::SetLogger("debug");
     fl::ws::WorkSpace ws;
+    ws.set_schedule_mode(2);
     ws.set_pool(2);
     ws.LoadAllTables(args);
     ws.IndexAllReferencesQueries(args);

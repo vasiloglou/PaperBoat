@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
     // Use a generic workspace model
     fl::Logger::SetLogger("debug");
     fl::ws::WorkSpace ws;
+    ws.set_schedule_mode(2);
     ws.set_pool(1);
     ws.LoadAllTables(args);
     fl::ml::Lasso<boost::mpl::void_>::Run(&ws, args);

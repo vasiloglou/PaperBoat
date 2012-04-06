@@ -738,7 +738,7 @@ namespace fl { namespace ml {
       "the reference data "
     )(
       "targets_in",
-      boost::program_options::value<std::string>()->default_value(""),
+      boost::program_options::value<std::string>(),
       "if your target values (dependent variable) is not encoded in the "
       "--references_in then you should provide them with this option"
     )(

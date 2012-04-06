@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   try {
     // Use a generic workspace model
     fl::ws::WorkSpace ws;
-    ws.set_schedule_mode(1);
+    ws.set_schedule_mode(2);
     ws.set_pool(4);
     ws.LoadAllTables(args);
     fl::ml::LinearRegression<boost::mpl::void_>::Run(&ws, args);

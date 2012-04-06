@@ -360,7 +360,7 @@ if(GenCMake_DECLARE_PROJECT)
     "Whether to build shared or static libraries.")
   # Enable reasonable warnings on reasonable compilers
   if(CMAKE_COMPILER_IS_GNUCXX)
-    append(CMAKE_CXX_FLAGS " -Wall -Wno-sign-compare -fno-strict-aliasing ")
+    append(CMAKE_CXX_FLAGS " -Wall -Wno-sign-compare -fno-strict-aliasing -pthread ")
     if(POSITION_INDEPENDENT) 
       append(CMAKE_CXX_FLAGS "-fPIC")
     endif()
