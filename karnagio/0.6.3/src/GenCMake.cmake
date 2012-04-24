@@ -150,6 +150,7 @@ function(GenCMake_add_library LIB_PATH)
     LIBRARY_OUTPUT_DIRECTORY ${GenCMake_LIB_OUT_DIR}
     ARCHIVE_OUTPUT_DIRECTORY ${GenCMake_LIB_OUT_DIR}
     RUNTIME_OUTPUT_DIRECTORY ${GenCMake_LIB_OUT_DIR}
+    LINK_SEARCH_START_STATIC 1
     OUTPUT_NAME ${LIB_NAME} VERSION ${GenCMake_VERSION})
 
   target_link_libraries(lib${LIB_NAME} ${GenCMake_LIBRARIES})
@@ -172,6 +173,7 @@ function(GenCMake_add_python PYTHON_PATH)
     LIBRARY_OUTPUT_DIRECTORY ${GenCMake_LIB_OUT_DIR}
     ARCHIVE_OUTPUT_DIRECTORY ${GenCMake_LIB_OUT_DIR}
     RUNTIME_OUTPUT_DIRECTORY ${GenCMake_LIB_OUT_DIR}
+    LINK_SEARCH_START_STATIC 1
     OUTPUT_NAME ${PYTHON_NAME} )
 
   target_link_libraries(python-${PYTHON_NAME} ${GenCMake_LIBRARIES})
@@ -190,6 +192,7 @@ function(GenCMake_add_executable BIN_PATH)
   add_executable(${BIN_NAME} ${SOURCES})
 
   set_target_properties(${BIN_NAME} PROPERTIES
+    LINK_SEARCH_START_STATIC 1
     RUNTIME_OUTPUT_DIRECTORY ${GenCMake_BIN_OUT_DIR})
 
   target_link_libraries(${BIN_NAME} ${GenCMake_LIBRARIES})
@@ -210,6 +213,7 @@ function(GenCMake_add_test TEST_PATH)
   add_dependencies(all-tests ${TEST_NAME}-test)
 
   set_target_properties(${TEST_NAME}-test PROPERTIES
+    LINK_SEARCH_START_STATIC 1
     RUNTIME_OUTPUT_DIRECTORY ${GenCMake_TEST_OUT_DIR})
 
   target_link_libraries(${TEST_NAME}-test ${GenCMake_LIBRARIES})
