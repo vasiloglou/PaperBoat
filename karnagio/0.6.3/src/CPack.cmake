@@ -36,23 +36,23 @@ SET(CPACK_SOURCE_IGNORE_FILES
         )
 
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/allkn
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/kde
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/kmeans
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/lasso
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/regression
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/svd
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/svm
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/nmf
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 install(FILES  /.${CMAKE_BINARY_DIR}/${GenCMake_BIN_OUT_DIR}/npr
-  DESTINATION /opt/ismion/paperboat/)
+  DESTINATION share/ismion/paperboat/)
 
 
 include (CPack)
