@@ -18,13 +18,13 @@ message ("-- 64bit architecture is ${ARCH64BIT}")
 if ( ${ARCH64BIT} EQUAL 1 )
   SET ( CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 else( ${ARCH64BIT} EQUAL 1 )
-  SET ( CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i686")
+  SET ( CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
 endif ( ${ARCH64BIT} EQUAL 1 )
 
 SET(CPACK_PACKAGE_NAME paperboat-${CPACK_DEBIAN_PACKAGE_ARCHITECTURE})
 
 SET(CPACK_DEBIAN_PACKAGE_DEPENDS 
-  "libboost-all-dev, liblapack-dev, g++, gfortran, libtrilinos-dev")
+  "libboost-all-dev, liblapack-dev, g++, gfortran, libtrilinos-dev, libtrilinos")
 
 SET(CPACK_SOURCE_IGNORE_FILES
         "*~"
