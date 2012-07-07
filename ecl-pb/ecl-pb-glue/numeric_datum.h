@@ -41,16 +41,16 @@ namespace fl {namespace hpcc {
       uint64 &id() {
         return reinterpret_cast<uint64*>(ptr_)[0];
       }  
-      uint16 &number() {
-        return reinterpret_cast<uint16*>(ptr_+sizeof(uint64))[0];
+      uint32 &number() {
+        return reinterpret_cast<uint32*>(ptr_+sizeof(uint64))[0];
       }
       PrecisionType &value() {
         return reinterpret_cast<PrecisionType*>(ptr_
                                     +sizeof(uint64)
-                                    +sizeof(uint16))[0];
+                                    +sizeof(uint32))[0];
       }
       static int32 size() {
-        return (sizeof(uint64)+sizeof(uint16)+sizeof(PrecisionType));
+        return (sizeof(uint64)+sizeof(uint32)+sizeof(PrecisionType));
       }
   };
 }}
