@@ -37,10 +37,16 @@ t=threading.Timer(120, test_suite.ExpireTest, "ensvd", fout)
 # Start the tests
 for directory in bin_dir.values():
   ensvd1=directory+"/ensvd --references_prefix_in="+\
-      dataset_dir+"/ensvd_test/gaussians"+          \
-      " --references_num_in=3"+                     \
+      dataset_dir+"/3gaussians/3gaussians_chunk   "+\
+      " --references_num_in=2"+                     \
       " --svd:svd_rank=3"+                          \
-      " --svd:algorithm=covariance"                
+      " --svd:algorithm=covariance"+                \
+      " --lsv_prefix_out=lsv "+                     \
+      " --lsv_num_out=2 "+                          \
+      " --sv_out=sv "+                              \
+      " --rsv_prefix_out=rsv "+                     \
+      " --rsv_num_out=2 "
+
   print ensvd1
   os.system(ensvd1 + " 2>&1 > temp")
   if (test_suite.EvaluateRun("temp", [], []))==True:
@@ -48,7 +54,14 @@ for directory in bin_dir.values():
   else:
     print >> fout, ensvd1, "FAILED"
   #os.remove("temp")
+  if os.path.exists("sv")==True:
+    os.remove("sv")
+  if os.path.exists("rsv0")==True:  
+    os.remove("rsv*")
+  if os.path.exists("lsv0")==True:  
+    os.remove("lsv*")
   
 print >> fout, "[ensvd] Test finished"
 fout.close()
 t.cancel()
+

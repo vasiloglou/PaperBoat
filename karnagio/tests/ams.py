@@ -21,7 +21,7 @@ version_dir=options.version_dir
 build_mode=["config-debug"]
 bin_dir={"debug":(version_dir+"debug.build/bin"), \
     "release":(version_dir+"release.build/bin")}
-targets="moe"
+targets="ams"
 dataset_dir="./datasets"
 test_dir=os.getcwd()
 
@@ -30,32 +30,28 @@ test_suite.Build(version_dir, test_dir, targets, fout);
 
 # start the wtachdog timer that will stop the test in case
 # something goes wrong with the tests and they deadlock
-t=threading.Timer(120, test_suite.ExpireTest, "moe", fout)
+t=threading.Timer(120, test_suite.ExpireTest, "ams", fout)
 
 # Start the tests
 for directory in bin_dir.values():
-  moe1=directory+"/moe --references_in="+             \
-      dataset_dir+"/moe/moe_easy.pb"    +             \
-     " --predefined_memberships_in="+"/moe/moe_easy_memberships.pb "+ \
-     " --k_clusters=4 "+                              \
-     " --expert=regression "+                         \
-     " --expert_args=--algorithm:naive,--exclude_bias_term:0,--prediction_index_prefix:1 "+ \
-     " --log_expert=0 "+                              \
-     " --memberships_out=memberships "+               \
-     " --final_expert_args=--coeffs_out:coeffs "+     \
-  os.system(moe + " 2>&1 > temp")
+  ams1=directory+"/ams --references_in="+             \
+      dataset_dir+"3gaussians/3gaussians.txt "+       \
+      "--graphd:allkn:k_neighbors=15 "+               \
+      "--kde:bandwidth=0.9 " +                        \
+      "--clusters_out=clusters "+                     \
+      "--memberships_out=memberships"
+  os.system(ams1 + " 2>&1 > temp")
   if (test_suite.EvaluateRun("temp", [], []))==True:
-    print >> fout, moe, "SUCCESS"
+    print >> fout, ams1, "SUCCESS"
   else:
-    print >> fout, moe, "FAILED"
-    print moe, "FAILED"
+    print >> fout, ams1, "FAILED"
+    print ams1, "FAILED"
   os.remove("temp")
-  if os.path.exists("memberships0")==True:
-    os.remove("memberships*")
-  if os.path.exists("coeffs0")==True:  
-    os.remove("coeffs*")
+  if os.path.exists("clusters")==True:
+    os.remove("clusters")
+  if os.path.exists("memberships")==True:  
+    os.remove("memberships")
  
-print >> fout, "[moe] Test finished"
+print >> fout, "[ams] Test finished"
 fout.close()
 t.cancel()
-

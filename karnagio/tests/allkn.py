@@ -7,7 +7,7 @@ import optparse
 parser = optparse.OptionParser();
 
 parser.add_option("--version_dir", action="store", type="string", 
-    dest="version_dir", default="../branches/0.6.3/", 
+    dest="version_dir", default="../branches/0.6.4/", 
     help="the version directory to build/use the binaries")
 parser.add_option("--logfile", action="store", type="string", 
     dest="logfile", default="test_results",
