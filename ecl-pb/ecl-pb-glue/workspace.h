@@ -31,7 +31,7 @@ namespace fl { namespace hpcc {
 
   class WorkSpace : public fl::ws::WorkSpace {
     public:
-      typedef typename boost::mpl::map<
+      typedef  boost::mpl::map<
         boost::mpl::pair<
           double,
           DefaultSparseDoubleTable_t
@@ -50,7 +50,7 @@ namespace fl { namespace hpcc {
         >
       >::type SparseTables_t;
 
-      typedef typename boost::mpl::map<
+      typedef  boost::mpl::map<
         boost::mpl::pair<
           double,
           DefaultTable_t
