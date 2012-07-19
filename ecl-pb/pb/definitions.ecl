@@ -1,6 +1,6 @@
 EXPORT Definitions() :=  MACRO
   #option('compileOptions', 
-      +' -I/usr/include/karnagio/include'
+      ' -I/usr/include/karnagio/include'
       +' -I/usr/local/include/karnagio/include'
       +' -I/usr/include/karnagio/src/' 
       +' -I/usr/local/include/karnagio/src'
