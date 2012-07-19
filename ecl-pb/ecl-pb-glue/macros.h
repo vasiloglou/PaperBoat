@@ -34,10 +34,9 @@ POSSIBILITY OF SUCH DAMAGE.
       fl::hpcc::ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<double> >(args, \
           static_cast<const char*>(realws), \
           lenRealws); \
-                      \
       fl::hpcc::ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<uint8> >(args, \
           static_cast<const char*>(uint8ws), \
-          lenUint8ws); \
+          lenUint8ws);\
       fl::hpcc::ws[session]->LoadAllDenseHPCCDataSets<fl::hpcc::SetDatum<int32> >(args, \
           static_cast<const char*>(int32ws), \
           lenInt32ws); \
