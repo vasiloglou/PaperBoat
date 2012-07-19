@@ -27,6 +27,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define PAPERBOAT_HPCC_SRC_WORKSPACE_DEV_H_
 #include "workspace.h"
 #include "fastlib/util/string_utils.h"
+#include <fstream>
 
 namespace fl {namespace hpcc{
 
@@ -109,7 +110,6 @@ namespace fl {namespace hpcc{
   void WorkSpace::LoadAllDenseHPCCDataSets(const std::string &arguments,
       const char *in_data,
       const uint64 data_len) {
-
     FL_SCOPED_LOG(LoadDense);
     typedef typename boost::mpl::at<
       DenseTables_t,
