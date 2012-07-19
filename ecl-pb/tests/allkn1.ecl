@@ -40,8 +40,7 @@ z:=PB.Karnagio(x,,).Allkn(' --references_in=dense$double$0 '
                +' --distances_out=dense$double$3'
                +' --indices_out=dense$uint32$4');
 
-OUTPUT(z.call);
 OUTPUT(z.real_result);
-output(z.uint32_result);
+OUTPUT(z.uint32_result);
 
 PB.UnDefinitions();
