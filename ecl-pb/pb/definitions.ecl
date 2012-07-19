@@ -1,11 +1,11 @@
 EXPORT Definitions() :=  MACRO
   #option('compileOptions', 
-      +' -I/usr/include/karnagio/include'
-      +' -I/usr/local/include/karnagio/include'
-      +' -I/usr/include/karnagio/src/' 
-      +' -I/usr/local/include/karnagio/src'
-      +' -I/usr/include/ecl-pb-glue'
-      +' -I/usr/local/include/ecl-pb-glue');
+    ' -I/usr/include/karnagio/include'
+    +' -I/usr/local/includekarnagio/include'
+    +' -I/usr/include/karnagio/src/' 
+    +' -I/usr/local/include/karnagio/src'
+    +' -I/usr/include/ecl-pb-glue'
+    +' -I/usr/local/include/ecl-pb-glue');
   #option('linkOptions', '-lecl-paperboat,'
                          +'-lboost_thread-mt,'
                          +'-lboost_program_options-mt,'
@@ -21,7 +21,7 @@ EXPORT Definitions() :=  MACRO
       #include <map>
       #include <string>
       namespace fl { namespace hpcc {
-        static std::map<std::string, boost::shared_ptr<fl::hpcc::WorkSpace> > ws; 
+        std::map<std::string, boost::shared_ptr<fl::hpcc::WorkSpace> > ws; 
         std::stringstream str_stream;
       }}
     #endif
