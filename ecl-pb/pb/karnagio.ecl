@@ -10,7 +10,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
          DATASET(Types.Int32LDatum) int32ws=empty3) := MODULE 
 
   SHARED DATASET(Types.RealLDatum) GetRealTables(STRING arguments, 
-      STRING session_tag) :=BEGINC++
+      STRING session_tag, INTEGER call) :=BEGINC++
     #option once
     #option pure 
     
@@ -26,10 +26,11 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
          args,
          &__result,
          &__lenResult); 
+
   ENDC++;
   
   SHARED DATASET(Types.Uint8LDatum) GetUint8Tables(STRING arguments, 
-      STRING session_id) :=BEGINC++
+      STRING session_id, INTEGER call) :=BEGINC++
     #option pure
     #option once
     #include "set_datum.h"
@@ -47,7 +48,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
          &__lenResult); 
   ENDC++;
   SHARED DATASET(Types.Int32LDatum) GetInt32Tables(STRING arguments,
-      STRING session_tag) :=BEGINC++
+      STRING session_tag, INTEGER call) :=BEGINC++
     #option once
     #option pure
 
@@ -67,7 +68,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
   ENDC++;
 
   SHARED DATASET(Types.UInt32LDatum) GetUInt32Tables(STRING arguments,
-      STRING session_tag) :=BEGINC++
+      STRING session_tag, INTEGER call) :=BEGINC++
     #option once
     #option pure
 
@@ -87,7 +88,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
   ENDC++;
 
   SHARED DATASET(Types.Int64LDatum) GetInt64Tables(STRING arguments, 
-      STRING session_tag) :=BEGINC++
+      STRING session_tag, INTEGER call) :=BEGINC++
     #option pure
     #option once
     #include "set_datum.h"
@@ -109,6 +110,7 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include <iostream> 
       #include <sys/time.h>
       #body
+      
       timeval tv;
       gettimeofday(&tv, NULL);
       std::string random_tag =boost::lexical_cast<std::string>(tv.tv_usec);   
@@ -124,15 +126,22 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
           STRING arguments,
           STRING session_id) := BEGINC++
 
+
       #include <sstream>
       #include "workspace.h"
       #include "fastlib/base/logger.h"
       #include "mlpack/allkn/allkn.h"
       #include "set_datum.h"
       #include "macros.h"
-
+ 
       #body 
-     
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
+    
       try {
         PB_ECL_LOAD_DATA_MACRO
         fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
@@ -148,10 +157,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
         
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbAllkn(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
 
   END;
 
@@ -171,6 +180,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       #body
 
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
+
       try {
         PB_ECL_LOAD_DATA_MACRO
         fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
@@ -186,10 +202,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbKde(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
 
   END;
 
@@ -209,6 +225,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
       #body
 
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
+
       try {
         PB_ECL_LOAD_DATA_MACRO
         fl::hpcc::ws[session]->IndexAllReferencesQueries(vec);
@@ -224,10 +247,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbNpr(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
 
   END;
 
@@ -242,6 +265,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "set_datum.h"
       #include "mlpack/clustering/kmeans.h"
       #body
+
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
 
       try {
         PB_ECL_LOAD_DATA_MACRO
@@ -258,10 +288,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbKMeans(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
 
   END;
 
@@ -275,6 +305,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "set_datum.h"
       #include "mlpack/regression/linear_regression.h"
       #body
+
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
 
       try {
         PB_ECL_LOAD_DATA_MACRO
@@ -290,10 +327,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbLasso(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
 
   END;
 
@@ -309,6 +346,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "mlpack/lasso/lasso.h"
       #body
 
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
+
       try {
         PB_ECL_LOAD_DATA_MACRO
         fl::ml::Lasso<boost::mpl::void_>::Run(fl::hpcc::ws[session].get(), vec);
@@ -323,10 +367,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbLasso(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
 
   END;
 
@@ -340,6 +384,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "set_datum.h"
       #include "mlpack/nmf/nmf.h"
       #body
+
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
 
       try {
         PB_ECL_LOAD_DATA_MACRO
@@ -355,10 +406,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbNmf(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);      
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);      
   END;
 
   EXPORT Svd(STRING arguments) := MODULE
@@ -371,6 +422,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "set_datum.h"
       #include "mlpack/svd/svd.h"
       #body
+
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
 
       try {
         PB_ECL_LOAD_DATA_MACRO
@@ -386,10 +444,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbSvd(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);      
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);      
   END;
 
   EXPORT Svm(STRING arguments) := MODULE
@@ -402,6 +460,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "set_datum.h"
       #include "mlpack/svm/svm.h"
       #body
+
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
 
       try {
         PB_ECL_LOAD_DATA_MACRO
@@ -418,10 +483,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbSvm(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);    
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);    
   END;
 
   EXPORT OrthoRangeSearch(STRING arguments) := MODULE
@@ -434,6 +499,13 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
       #include "set_datum.h"
       #include "mlpack/ortho_range_search/ortho_range_search.h"
       #body
+
+      static bool has_been_before=false;
+      if (has_been_before==true) {
+        return 0;
+      } else {
+        has_been_before=true;
+      }
 
       try {
         PB_ECL_LOAD_DATA_MACRO
@@ -449,10 +521,10 @@ EXPORT Karnagio(DATASET(Types.RealLDatum) realws=empty1,
 
     SHARED STRING session_id := GenSession();
     EXPORT INTEGER call :=PbOrthoRangeSearch(realws, uint8ws, int32ws, arguments, session_id);
-    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id);
-    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id);
-    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id);    
-    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id);     
+    EXPORT DATASET(Types.RealLDatum) real_result := GetRealTables(arguments, session_id, call);
+    EXPORT DATASET(Types.Uint8LDatum) uint8_result := GetUint8Tables(arguments, session_id, call);
+    EXPORT DATASET(Types.Int32LDatum) int32_result := GetInt32Tables(arguments, session_id, call);    
+    EXPORT DATASET(Types.UInt32LDatum) uint32_result := GetUInt32Tables(arguments, session_id, call);     
   END;
 
 END;
