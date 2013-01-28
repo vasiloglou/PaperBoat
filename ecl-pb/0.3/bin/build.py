@@ -14,7 +14,7 @@ if options.mode=="debug":
   command+="cd debug; "
   command+="rm -rf *; "
   command+="cmake -DCMAKE_BUILD_TYPE=Debug ../pb-dev; "
-  command+="make -j"+options.j+" ecl-paperboat"
+  command+="make -j"+options.j+" eclpb"
   os.system("mkdir -p debug")
   os.system(command)
 else:
@@ -22,7 +22,7 @@ else:
     command+="cd release; "
     command+="rm -rf *; "
     command+="cmake -DCMAKE_BUILD_TYPE=Release ../pb-dev; "
-    command+="make -j"+options.j+" ecl-paperboat"
+    command+="make -j"+options.j+" eclpb"
     os.system("mkdir -p release")
     os.system(command)
   else:
