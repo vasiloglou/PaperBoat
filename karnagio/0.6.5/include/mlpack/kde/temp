@@ -1,0 +1,20 @@
+std::vector args=make_args(std::make_pair<"references_in","invar1" >, 
+  std::make_pair<"references_out", "outvar">, 
+  std::make_pair<bandwidth, boost:lexical_cast<std::string>(10))
+
+// or it can be
+std::vector<std::string> args
+AddArgs("bandwidth", 10, &args)
+AddArgs("references_in", "var1", &args)
+
+// This should return imediatelly
+fl::ml::kde::Main(data, args)
+
+std::vector<std::string> args2
+AddArgs("n_points", 100, &args2)
+AddArgs("a_class", "densitiesA", &args2)
+// so on
+fl:ml::ComputeAUC(data, args2)
+double auc=data->GetAsDouble("auc")
+
+
