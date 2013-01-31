@@ -264,7 +264,7 @@ class MonolithicPoint :
     
     void SetRandom(const CalcPrecision_t low, const CalcPrecision_t hi) {
       for(index_t i=0; i<this->size(); ++i) {
-        set(i, fl::math::Random(low, hi));
+        this->set(i, fl::math::Random(low, hi));
       }
     }
     
