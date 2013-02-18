@@ -80,5 +80,5 @@ void MakeRandomPermutation(index_t size, index_t *array) {
     array[victim] = i;
   }
 }
-};
-};
+}
+}

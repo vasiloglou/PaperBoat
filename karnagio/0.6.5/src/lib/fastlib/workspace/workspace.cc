@@ -105,8 +105,8 @@ namespace fl { namespace ws {
             && fl::StringEndsWith(tokens[0], "_prefix_in")==false) {
           std::string filename=tokens[1];
           std::string variable=filename;
-          if (boost::algorithm::contains(tokens[0], "references")||
-             boost::algorithm::contains(tokens[0], "queries")) {
+          if (boost::algorithm::contains(tokens[0], "references_in")||
+             boost::algorithm::contains(tokens[0], "queries_in")) {
             LoadFromFile<DataTables_t>(variable, filename);
           } else {
             LoadFromFile<ParameterTables_t>(variable, filename);
@@ -558,9 +558,18 @@ namespace fl { namespace ws {
     bool is_name_in_map;
     {
       boost::mutex::scoped_lock lock(global_mutex_);
-      is_name_in_map=mutex_map_.count(name)==0;
+      is_name_in_map=(mutex_map_.count(name)!=0);
     }
-    if (is_name_in_map) {
+    if (schedule_mode_==2 && is_name_in_map==false) {
+      fl::logger->Warning()<<"table ("
+        <<name
+        <<") was not generated at all by your program "
+        <<"skiping export to filename ("
+        <<filename
+        <<")"<<std::endl;
+      return;
+    }
+    if (is_name_in_map==false) {
       mutex=new boost::mutex();
       boost::mutex::scoped_lock lock(global_mutex_);
       mutex_map_[name].reset(mutex);
@@ -568,6 +577,19 @@ namespace fl { namespace ws {
     } else {
       boost::mutex::scoped_lock lock(global_mutex_);
       mutex=mutex_map_[name].get();
+    }
+    if (schedule_mode_==2) {
+      if (mutex->try_lock()==false) {
+        fl::logger->Warning()<<"something happened and table ("
+          <<name
+          <<") was not generated properly by your program "
+          <<"skiping export to filename ("
+          <<filename
+          <<")"<<std::endl;
+       return;
+      } else {
+        mutex->unlock();
+      }
     }
     boost::mutex::scoped_lock lock(*mutex);
     bool success=false;
@@ -858,6 +880,12 @@ namespace fl { namespace ws {
     name.append(boost::lexical_cast<std::string>(temp_var_counter_));
     temp_var_counter_++;
     return name;
+  }
+  
+  std::string WorkSpace::GiveFilenameFromSequence(
+        const std::string &prefix, 
+        int32 index) {
+    return prefix+boost::lexical_cast<std::string>(index);
   }
 
   void WorkSpace::MakeACopy(WorkSpace *ws) {

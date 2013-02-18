@@ -85,10 +85,8 @@ namespace fl { namespace ml {
     boost::shared_ptr<fl::table::DefaultTable> hist_table;
     // We will output the labels that are integers ranging possibly
     // from -inf to +inf 
-    std::string hist_name=vm["histogram_prefix_in"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
-    std::string labels_name=vm["labels_prefix_in"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string hist_name=ws->GiveFilenameFromSequence(vm["histogram_prefix_in"].as<std::string>(), id_);
+    std::string labels_name=ws->GiveFilenameFromSequence(vm["labels_prefix_in"].as<std::string>(), id_);
     ws->Attach(
         labels_name,
         &labels_table);    
@@ -184,10 +182,8 @@ namespace fl { namespace ml {
     boost::shared_ptr<fl::table::DefaultTable> hist_table;
     // We will output the labels that are integers ranging possibly
     // from -inf to +inf 
-    std::string hist_name=vm["histogram_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
-    std::string labels_name=vm["labels_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string hist_name=ws->GiveFilenameFromSequence(vm["histogram_prefix_out"].as<std::string>(), id_);
+    std::string labels_name=ws->GiveFilenameFromSequence(vm["labels_prefix_out"].as<std::string>(), id_);
     index_t range=distribution_.end()->first-distribution_.begin()->first;
     ws->Attach(
         labels_name,

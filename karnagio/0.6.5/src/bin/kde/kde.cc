@@ -24,7 +24,7 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 #include <vector>
 #include <string>
-#include "mlpack/kde/kde_dev.h"
+#include "mlpack/kde/kde.h"
 #include "fastlib/workspace/workspace_defs.h"
 #include "fastlib/table/branch_on_table_dev.h"
 #include "fastlib/table/table_dev.h"

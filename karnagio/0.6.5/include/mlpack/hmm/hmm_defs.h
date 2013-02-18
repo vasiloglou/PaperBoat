@@ -623,7 +623,8 @@ namespace fl { namespace ml {
         fl::logger->Message()<<"Loaded references"<<std::endl;
         references.resize(reference_num);
         for(size_t i=0; i<references.size(); ++i) {
-          ws_->Attach(reference_prefix+boost::lexical_cast<std::string>(i),
+          ws_->Attach(ws_->GiveFilenameFromSequence(
+              reference_prefix, i),
             &references[i]);
         }
       }
@@ -837,7 +838,7 @@ namespace fl { namespace ml {
         if (tokens.size()!=2) {
           fl::logger->Die()<<"Something is wrong with the --references_in flag";
         }
-        references_in=tokens[1]+"0";
+        references_in=ws->GiveFilenameFromSequence(tokens[1], 0);
         break;
       }
     }

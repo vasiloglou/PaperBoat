@@ -88,13 +88,11 @@ namespace fl { namespace ml {
     } 
     boost::program_options::notify(vm);
     boost::shared_ptr<TableType> references_table;
-    std::string name1=vm["references_prefix_in"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name1=ws->GiveFilenameFromSequence(vm["references_prefix_in"].as<std::string>(), id_);
     ws->Attach(name1, 
         &references_table);   
     boost::shared_ptr<fl::ws::WorkSpace::DefaultTable_t> bandwidth_table;
-    std::string name2=vm["bandwidths_prefix_in"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name2=ws->GiveFilenameFromSequence(vm["bandwidths_prefix_in"].as<std::string>(), id_);
 
     typename fl::ws::WorkSpace::DefaultTable_t::Point_t point;
     ws->Attach(name2,
@@ -244,12 +242,10 @@ namespace fl { namespace ml {
     } 
     boost::program_options::notify(vm);
     boost::shared_ptr<TableType> references_table;
-    std::string name1=vm["references_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name1=ws->GiveFilenameFromSequence(vm["references_prefix_out"].as<std::string>(), id_);
     ws->LoadTable(name1, references_table);   
     boost::shared_ptr<fl::ws::WorkSpace::DefaultTable_t> bandwidth_table;
-    std::string name2=vm["bandwidths_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name2=ws->GiveFilenameFromSequence(vm["bandwidths_prefix_out"].as<std::string>(), id_);
 
     typename fl::ws::WorkSpace::DefaultTable_t::Point_t point;
     ws->Attach(name2,

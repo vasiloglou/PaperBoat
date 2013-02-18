@@ -349,7 +349,7 @@ void ComputeCentroid::Compute(
                                        it, radius, &dummy);
 }
 
-};    // tree namespace
-};    // fl namespace
+}    // tree namespace
+}    // fl namespace
 
 #endif

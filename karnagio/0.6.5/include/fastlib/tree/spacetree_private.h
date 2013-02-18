@@ -260,6 +260,6 @@ class LeftRightAccessors<true> {
 //      }
 //    }
 //};
-};
+}
 
 #endif

@@ -109,7 +109,7 @@ class EmptyStatisticMultiBranch {
     }
 
 };
-}; // tree namespace
-}; // fl namespace
+} // tree namespace
+} // fl namespace
 
 #endif

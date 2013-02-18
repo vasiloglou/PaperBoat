@@ -38,7 +38,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "fastlib/table/linear_algebra.h"
 #include "fastlib/workspace/based_on_table_run.h"
 
+template<typename WorkSpaceType>
 inline void GetSequenceFileNames(
+    WorkSpaceType *ws,
     const boost::program_options::variables_map &vm,
     const std::string &suffix,
     const std::string &arg_name, 
@@ -125,7 +127,8 @@ int fl::ml::EnSvd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<
 
   // load all data
   std::vector<std::string> references_filenames;
-  GetSequenceFileNames(vm,
+  GetSequenceFileNames(ws, 
+      vm,
     "_in",
     "references", 
     &references_filenames);
@@ -137,10 +140,10 @@ int fl::ml::EnSvd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<
     svd_args.Add(fl::ws::MakeArgsFromPrefix(args, "svd"));
     svd_args.Add("references_in", 
         references_filenames[i]);
-    svd_args.Add("lsv_out", fl::StitchStrings(lsv_prefix, i));
-    svd_args.Add("rsv_out", fl::StitchStrings(rsv_prefix, i));
+    svd_args.Add("lsv_out", ws->GiveFilenameFromSequence(lsv_prefix, i));
+    svd_args.Add("rsv_out", ws->GiveFilenameFromSequence(rsv_prefix, i));
     fl::logger->Message()<<"Running SVD on "
-      <<fl::StitchStrings("references", i)<< std::endl;
+      <<ws->GiveFilenameFromSequence("references", i)<< std::endl;
     fl::ml::Svd<boost::mpl::void_>::Run(ws, svd_args.args());
   }
   // merge all right hand side 
@@ -148,7 +151,7 @@ int fl::ml::EnSvd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<
     concat_rsv_table;
   index_t n_attributes;
   index_t n_entries;
-  ws->GetTableInfo(rsv_prefix+"0", &n_entries, &n_attributes, NULL, NULL);
+  ws->GetTableInfo(ws->GiveFilenameFromSequence(rsv_prefix, 0), &n_entries, &n_attributes, NULL, NULL);
   std::string concat_rsv=ws->GiveTempVarName();
   ws->Attach(concat_rsv,
       std::vector<index_t>(1, n_entries),
@@ -158,7 +161,7 @@ int fl::ml::EnSvd<boost::mpl::void_>::Main(WorkSpaceType *ws, const std::vector<
   int32 results_merged=0;
   std::list<std::string> result_tables;
   for(int32 i=0; i<references_filenames.size(); ++i) {
-    result_tables.push_back(fl::StitchStrings(rsv_prefix, i));
+    result_tables.push_back(ws->GiveFilenameFromSequence(rsv_prefix, i));
   }
   typename WorkSpaceType::MatrixTable_t::Point_t point;
   index_t counter=0;
@@ -234,7 +237,9 @@ void fl::ml::EnSvd<boost::mpl::void_>::Run(
   ws->schedule(task); 
 }
 
+template<typename WorkSpaceType>
 inline void GetSequenceFileNames(
+    WorkSpaceType *ws,
     const boost::program_options::variables_map &vm,
     const std::string &suffix,
     const std::string &arg_name, 
@@ -255,7 +260,7 @@ inline void GetSequenceFileNames(
       }
       int32 n_files=vm[arg_name+"_num"+suffix].as<int32>();
       for(int32 i=0; i<n_files; ++i) {
-        table_names->push_back(fl::StitchStrings(prefix, i));
+        table_names->push_back(ws->GiveFilenameFromSequence(prefix, i));
       }
     } 
   }
@@ -269,13 +274,13 @@ void fl::ml::EnSvd<boost::mpl::void_>::Project<WorkSpaceType>::operator()(TableT
   boost::shared_ptr<typename WorkSpaceType::MatrixTable_t> rsv_table;
   ws_->Attach(vm_["rsv_in"].as<std::string>(), &rsv_table);
   std::vector<std::string> lsv_out;
-  GetSequenceFileNames(vm_, "_out", "lsv", &lsv_out);
+  GetSequenceFileNames(ws_, vm_, "_out", "lsv", &lsv_out);
   if (lsv_out.size()==0) {
     return;
   }
   int32 n_references=lsv_out.size();
   std::vector<std::string> references;
-  GetSequenceFileNames(vm_, "_in", "references", &references);
+  GetSequenceFileNames(ws_, vm_, "_in", "references", &references);
   if (references.size()!=lsv_out.size()) {
     fl::logger->Die()<<"The number of --lsv_out must be the same "
       "as references_in";

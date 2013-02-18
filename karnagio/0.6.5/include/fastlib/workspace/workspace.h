@@ -314,6 +314,9 @@ class WorkSpace : boost::noncopyable {
     void WaitAllTasks();
     void MakeACopy(WorkSpace *ws); 
     const std::string GiveTempVarName();
+    std::string GiveFilenameFromSequence(
+        const std::string &prefix, 
+        int32 index);
 
   protected:
     struct LoadMeta {

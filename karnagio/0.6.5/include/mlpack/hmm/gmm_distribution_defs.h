@@ -138,16 +138,13 @@ namespace fl { namespace ml {
     } 
     boost::program_options::notify(vm);
     boost::shared_ptr<Covariance_t> covariance_table;
-    std::string name1=vm["covariance_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name1=ws->GiveFilenameFromSequence(vm["covariance_prefix_out"].as<std::string>(), id_);
        
     boost::shared_ptr<fl::table::DefaultTable> mean_table;
-    std::string name2=vm["mean_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name2=ws->GiveFilenameFromSequence(vm["mean_prefix_out"].as<std::string>(), id_);
  
     boost::shared_ptr<fl::table::DefaultTable> prior_table;
-    std::string name3=vm["prior_prefix_out"].as<std::string>()
-        +boost::lexical_cast<std::string>(id_);
+    std::string name3=ws->GiveFilenameFromSequence(vm["prior_prefix_out"].as<std::string>(), id_);
 
   }
 

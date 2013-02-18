@@ -459,6 +459,83 @@ std::vector<boost::shared_ptr<Table<TemplateMap> > > Table<TemplateMap>::Split(i
 }
 
 template<typename TemplateMap>
+template<typename DenseTableType>
+void Table<TemplateMap>::GetAllAttributePairsTables(
+    std::vector<boost::shared_ptr<DenseTableType> > *tables, 
+    std::vector<std::pair<std::string, std::string> > *attribute_pairs) {
+  std::vector<std::string> *cols;
+  if (this->labels()!="") {
+    cols=&(this->labels());
+  } else {
+    cols=new std::vector<std::string>(this->n_attributes());
+    for(index_t i=0; i<this->n_attributes(); ++i) {
+      (*cols)[i]=boost::lexical_cast<std::string>(i);
+    }
+  }
+  for(index_t i=0; i<this->n_attributes(); ++i) {
+    for(index_t j=i+1; j<this->n_attributes(); ++j) {
+       attribute_pairs->push_back(
+           std::make_pair((*cols)[i], (*cols)[j]));    
+       boost::shared_ptr<DenseTableType> table_ptr(new DenseTableType());
+       table_ptr->Init((*cols)[i]+":"+(*cols)[j],
+           std::vector<index_t>(1,2),
+           std::vector<index_t>(),
+           this->n_entries());
+       tables->push_back(table_ptr);
+    }
+  }
+  Point_t point;
+  typename Point_t::iterator it1, it2;
+  typename DenseTableType::Point_t p;
+  for(index_t i=0; i<this->n_entries(); ++i) {
+    this->get(i, &point);
+    index_t counter=0;
+    for(it1=point.begin(); it1!=point.end(); ++it1) {
+      it2=it1;
+      ++it2;
+      for(; it2!=point.end(); ++it2) {
+         (*tables)[counter]->get(i, &p);
+         p.set(0, it1.value());
+         p.set(1, it2.value());
+      }
+    }
+  }
+  if (this->labels()=="") {
+    delete cols;
+  }
+}
+
+template<typename TemplateMap>
+template<typename DenseTableType>
+void Table<TemplateMap>::GetAttributePairsTables(
+        const std::vector<std::pair<index_t, index_t> > &attribute_pairs,
+        std::vector<boost::shared_ptr<DenseTableType> > *tables) {
+
+  for(index_t i=0; i<attribute_pairs.size(); ++i) {
+    boost::shared_ptr<DenseTableType> table_ptr(new DenseTableType());
+    table_ptr->Init(
+         boost::lexical_cast<std::string>(attribute_pairs[i].first)
+         +":"+boost::lexical_cast<std::string>(attribute_pairs[i].second),
+         std::vector<index_t>(1,2),
+         std::vector<index_t>(),
+         this->n_entries());
+     tables->push_back(table_ptr);
+  }
+  Point_t point;
+  typename DenseTableType::Point_t p;
+  for(index_t i=0; i<this->n_entries(); ++i) {
+    this->get(i, &point);
+    index_t counter=0;
+    for(index_t j=0; j<attribute_pairs.size(); ++j) {
+      (*tables)[j]->get(i, &p);
+      p.set(0, point[j].first);
+      p.set(1, point[j].second);
+    }
+  }
+}
+
+
+template<typename TemplateMap>
 bool Table<TemplateMap>::is_indexed() const {
   return tree_ != NULL;
 }
@@ -983,7 +1060,7 @@ index_t Table<TemplateMap>::direct_get_id_(index_t point_id) const {
 }
 
 
-}; // namesapce tree
-}; // namespace fl
+} // namesapce tree
+} // namespace fl
 
 #endif

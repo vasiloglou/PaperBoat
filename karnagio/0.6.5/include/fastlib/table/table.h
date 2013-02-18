@@ -240,6 +240,15 @@ class Table : boost::noncopyable {
                                 index_t num_of_samples_per_node, Table_t *table);
     std::vector<boost::shared_ptr<Table_t> > Split(int32 n_tables, const std::string &args);
 
+    template<typename DenseTableType>
+    void GetAllAttributePairsTables(std::vector<boost::shared_ptr<DenseTableType> > *tables, 
+        std::vector<std::pair<std::string, std::string> > *attribute_pairs);
+
+    template<typename DenseTableType>
+    void GetAttributePairsTables(
+        const std::vector<std::pair<index_t, index_t> > &attribute_pairs,
+        std::vector<boost::shared_ptr<DenseTableType> > *tables);
+
     void LogTreeStats();
     bool is_indexed() const ;
     void PrintTree();
@@ -353,8 +362,8 @@ class Table : boost::noncopyable {
   friend struct table_get::General<Table_t>;
   friend struct table_get::Special<Table_t>;
 };
-}; // namesapce tree
-}; // namespace fl
+} // namesapce tree
+} // namespace fl
 
 
 #endif

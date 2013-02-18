@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "boost/algorithm/string/classification.hpp"
 #include "boost/algorithm/string/trim.hpp"
 #include "boost/lexical_cast.hpp"
+#include "boost/math/special_functions/fpclassify.hpp"
 #include "fastlib/base/base.h"
 #include "fastlib/data/multi_dataset.h"
 #include "fastlib/metric_kernel/weighted_lmetric_dev.h"
@@ -156,6 +157,10 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
     for (int i=0; i<tokens.size(); ++i) {
       try {
         kda_bandwidths.push_back(boost::lexical_cast<double>(tokens[i]));
+        if (kda_bandwidths.back()<=0) {
+          fl::logger->Die()<<"--kda_bandwidths must contain positive numbers only "
+            <<"one of them was ("<<kda_bandwidths.back()<< ") which is not valid";
+        }
       }
       catch(const boost::bad_lexical_cast &e) {
         fl::logger->Die()<<"The --kda_bandwidths must be a list of numbers";
@@ -172,7 +177,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
   // Open the table for writing out the KDA labels.
   boost::shared_ptr<typename DataAccessType::template TableVector<index_t> > result_table;
   if (vm.count("result_out") > 0) {
-    if (queries->n_entries()==0) {
+    if (queries.get()==NULL) {
       fl::logger->Die()<<"You asked for --result_out but you haven't provided "
         " a --queries_in option";
     }
@@ -262,7 +267,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
             iterator<fl::math::LMetric<2> > it = dualtree_engine.get_iterator(
                                        fl::math::LMetric<2>(), &result[0]);
             timer.Start();
-            for (int i = 0; i < iterations; i++) {
+            for (int ii = 0; ii < iterations; ii++) {
               ++it;
             }
             timer.End();
@@ -305,7 +310,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
               iterator<fl::math::LMetric<2> > it = dualtree_engine.get_iterator(
                                          fl::math::LMetric<2>(), &result[0]);
               timer.Start();
-              for (int i = 0; i < iterations; i++) {
+              for (int ii = 0; ii < iterations; ii++) {
                 ++it;
               }
               timer.End();
@@ -355,7 +360,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
               iterator<fl::math::WeightedLMetric<2, fl::data::MonolithicPoint<double>  > > it 
               = dualtree_engine.get_iterator(w_index_args.metric, &result[0]);
               timer.Start();
-              for (index_t i = 0; i < iterations; i++) {
+              for (index_t ii = 0; ii < iterations; ii++) {
                 ++it;
               }
               timer.End();
@@ -400,7 +405,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                 iterator<fl::math::WeightedLMetric<2, fl::data::MonolithicPoint<double> > > it = dualtree_engine.get_iterator(
                     w_index_args.metric, &result[0]);
                 timer.Start();
-                for (index_t i = 0; i < iterations; i++) {
+                for (index_t ii = 0; ii < iterations; ii++) {
                   ++it;
                 }
                 timer.End();
@@ -605,10 +610,28 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
     if (vm.count("queries_in")) {
       // Prepare to collect density results
       std::vector<boost::shared_ptr<typename DataAccessType::DefaultTable_t>  >densities(reference_set_count);
+      std::string density_prefix;
+      if (vm.count("densities_prefix_out")>0) {
+        density_prefix = vm["densities_prefix_out"].as<std::string>();
+      } else {
+        density_prefix = data->GiveTempVarName();
+      }
+      int32 density_num;
+      if (vm.count("densities_num_out")>0) {
+        density_num = vm["densities_num_out"].as<int32>();
+        if (density_num!=reference_set_count) {
+          fl::logger->Die()<<"--densities_num_out ("<< density_num
+              <<") must be equal to --references_in ("
+              <<reference_set_count<<")";
+        }
+      } else {
+        density_num=reference_set_count;
+      }
+
       for(index_t i=0; i<reference_set_count; ++i) {
         densities[i].reset(new typename DataAccessType::DefaultTable_t());
-        std::string new_name = vm["densities_out"].as<std::string>();
-        new_name += boost::lexical_cast<std::string>(i);
+        
+        std::string new_name = data->GiveFilenameFromSequence(density_prefix, i);
         data->Attach(new_name,
             std::vector<index_t>(1,1),
             std::vector<index_t>(),
@@ -652,7 +675,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
               typename fl::ml::DualtreeDfs<Kde_t>::template
               iterator<fl::math::LMetric<2> > it = dualtree_engine.get_iterator(
                                        fl::math::LMetric<2>(), &result[i]);
-              for (index_t i = 0; i < iterations; i++) {
+              for (index_t ii = 0; ii < iterations; ii++) {
                 ++it;
               }
               // Tell the iterator that we are done using it so that the
@@ -699,7 +722,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                 typename fl::ml::DualtreeDfs<Kde_t>::template
                 iterator<fl::math::LMetric<2> > it = dualtree_engine.get_iterator(
                                        fl::math::LMetric<2>(), &result[i]);
-                for (index_t i = 0; i < iterations; i++) {
+                for (index_t ii = 0; ii < iterations; ii++) {
                   ++it;
                 }
                 // Tell the iterator that we are done using it so that the
@@ -753,12 +776,12 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                 typename fl::ml::DualtreeDfs<Kde_t>::template
                 iterator<fl::math::WeightedLMetric<2, fl::data::MonolithicPoint<double> > > it = dualtree_engine.get_iterator(
                                          w_index_args.metric, &result[i]);
-                for (index_t i = 0; i < iterations; i++) {
+                for (index_t ii = 0; ii < iterations; ii++) {
                   ++it;
                   // Tell the iterator that we are done using it so that the
                   // result can be finalized.
-                  it.Finalize();
                 }
+                it.Finalize();
               }
               timer.End();
               fl::logger->Message() << "Took " << timer.GetTotalElapsedTime() << "seconds.";
@@ -800,7 +823,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                   typename fl::ml::DualtreeDfs<Kde_t>::template
                   iterator<fl::math::WeightedLMetric<2, fl::data::MonolithicPoint<double> > > it = dualtree_engine.get_iterator(
                                          w_index_args.metric, &result[i]);
-                  for (index_t i = 0; i < iterations; i++) {
+                  for (index_t ii = 0; ii < iterations; ii++) {
                     ++it;
                   }
                   // Tell the iterator that we are done using it so that the
@@ -819,78 +842,53 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
           fl::logger->Die() << "Unknown metric" << metric ;
         }
       }
+      
       for(index_t i=0; i<reference_set_count; ++i) {
         result[i].template GetDensities<1>(densities[i].get());
-        if (vm["densities_out"].as<std::string>()!="") {
-          fl::logger->Message() << "Emitting densities"<<std::endl;
-          std::string new_name = vm["densities_out"].as<std::string>();
-          new_name += boost::lexical_cast<std::string>(i);
-          data->Purge(new_name);
-          data->Detach(new_name);
-        }
+        std::string new_name = data->GiveFilenameFromSequence(density_prefix, i);
+        data->Purge(new_name);
+        data->Detach(new_name);
       }
       boost::shared_ptr<typename DataAccessType::IntegerTable_t> query_labels;
       bool compute_score=false;
       if (vm["queries_labels_in"].as<std::string>()!="") {
         data->Attach(vm["queries_labels_in"].as<std::string>(), &query_labels);
         compute_score=true;
+      } else {
+        fl::logger->Warning()<<"You haven't provided --queries_labels_in, I "
+          "make the assumption that query labels might be embedded on the "
+          "--queries_in table. If not just ignore the scores";
+        query_labels.reset(new typename DataAccessType::IntegerTable_t());
+        query_labels->Init("",
+            std::vector<index_t>(1,1),
+            std::vector<index_t>(),
+            queries->n_entries());
+         typename TableType1::Point_t point;
+         for(index_t i=0; i<queries->n_entries(); ++i) {
+           queries->get(i, &point);
+           query_labels->set(i, 0, point.meta_data(). template get<0>());
+         }
+         compute_score=true;
       }
 
       // we are going to compute the winning labels
-      std::vector<index_t> winning_classes(queries->n_entries(), 0);
-      partial_scores.resize(references.size());
-      std::fill(partial_scores.begin(), partial_scores.end(), 0);
-      points_per_class.resize(references.size());
-      std::fill(points_per_class.begin(), points_per_class.end(),0);
-      for (index_t i = 0; i < queries->n_entries(); ++i) {
-        double score = 0;
-        index_t winner = -1;
-        double a_score=0;
-        double b_score=0;
-        int label=-1;
-        if (compute_score==true) {
-          typename DataAccessType::IntegerTable_t::Point_t point;
-          query_labels->get(i, &point);
-          label=point[0];
-        }
-
-        for (index_t j = 0; j < densities.size(); j++) {
-          double this_score = densities[j]->get(i) * priors[j];
-          if (this_score > score) {
-            score = this_score;
-            winner = j;
-          }
-          if (auc==true && compute_score==true) {
-            if (label==auc_label) {
-              if (j==label) {
-                a_score+=log(priors[j]*this_score);
-              } else {
-                a_score-=log(priors[j]*this_score);
-              }
-            } else {
-              if (j==label) {
-                b_score-=log(priors[j]*this_score);
-              } else {
-                b_score+=log(priors[j]*this_score);
-              }
-            }
-          }
-        }
-        if (compute_score==true) {
-          points_per_class[label]+=1;
-          if (winner==label) {
-            total_accuracy+=1;
-            partial_scores[label]+=1;
-          }
-        }
-        if (compute_score==true && auc==true) {
-          if (label==auc_label) {
-            a_class_scores.push_back(a_score);
-          } else {
-            b_class_scores.push_back(b_score);
-          }
-        }
-      }
+      std::vector<index_t> winning_classes;
+      ComputeScoresForAuc(
+        (index_t)references.size(),
+        queries->n_entries(),
+        auc_label,
+        query_labels,
+        0,
+        result,
+        priors,
+        auc,
+        compute_score,
+        &partial_scores,
+        &points_per_class,
+        &a_class_scores,
+        &b_class_scores,
+        &winning_classes,
+        &total_accuracy);
       // Copy over to the table so that it can be exported.
       if (vm.count("result_out") > 0) {
         fl::logger->Message() << "Emitting the class labels for queries"<<std::endl;
@@ -912,14 +910,14 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
           "exported"<<std::endl;
       }
       if (compute_score==true) {
-        total_points=densities.size();
+        total_points=queries->n_entries();
         fl::logger->Message() << "Classification score on query set "
           <<"(total_points="<< total_points <<")" "set is " <<
-	            100.0*total_accuracy/total_points<<"%";
+	            100.0*total_accuracy/total_points<<"\%";
         fl::logger->Message() << "The score per class is ";
-        for(index_t i=0; i<points_per_class.size(); ++i) {
-          fl::logger->Message()<<"Class: "<<i<<", points: "<<points_per_class[i]
-              <<", score: "<<100*partial_scores[i]/points_per_class[i]<<"%%";
+        for(index_t ii=0; ii<points_per_class.size(); ++ii) {
+          fl::logger->Message()<<"Class: "<<ii<<", points: "<<points_per_class[ii]
+              <<", score: "<<100*partial_scores[ii]/points_per_class[ii]<<"\%";
         }
       }
       if (auc==true && compute_score==true) {
@@ -954,8 +952,26 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
       }
     } else {
       // LOOCV KDA 
+      std::string density_prefix="";
+      if (vm.count("densities_prefix_out")>0) {
+        density_prefix = vm["densities_prefix_out"].as<std::string>();
+      } 
+      int32 density_num=0;
+      if (vm.count("densities_num_out")>0) {
+        density_num = vm["densities_num_out"].as<int32>();
+        if (density_num!=reference_set_count * reference_set_count) {
+          fl::logger->Die()<<"--densities_num_out ("<< density_num
+              <<") must be equal to --references_in squared ("
+              <<reference_set_count * reference_set_count<<")";
+        }
+      } else {
+        density_num=reference_set_count;
+      }
+
       fl::logger->Message() << "Running LOOCV KDA"<<std::endl;
       for(index_t k=0; k<references.size(); ++k) {
+        result.clear();
+        result.resize(reference_set_count);
         if (metric=="l2") {
           if (kernel=="epan") {
             typedef fl::ml::Kde< KdeArgs<fl::math::EpanKernel<double>, 
@@ -1006,12 +1022,12 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                 typename fl::ml::DualtreeDfs<Kde_t>::template
                 iterator<fl::math::LMetric<2> > it = dualtree_engine.get_iterator(
                                          fl::math::LMetric<2>(), &result[i]);
-                for (index_t i = 0; i < iterations; i++) {
+                for (index_t ii = 0; ii < iterations; ii++) {
                   ++it;
                 }
                 // Tell the iterator that we are done using it so that the
                 // result can be finalized.
-                it.Finalize();
+                it.Finalize(); 
               }
               timer.End();
               fl::logger->Message() << "Took " << timer.GetTotalElapsedTime() << "seconds."<<std::endl;
@@ -1051,7 +1067,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                 for(index_t i=0; i<references.size(); ++i) {
                   if (k==i) {
                     kde_instance.Init(references[i].get(),
-                        NULL, bandwidth,
+                        NULL, kda_bandwidths[i],
                         relative_error, probability);
                   } else {
                     kde_instance.Init(references[i].get(),
@@ -1066,7 +1082,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                   typename fl::ml::DualtreeDfs<Kde_t>::template
                   iterator<fl::math::LMetric<2> > it = dualtree_engine.get_iterator(
                                          fl::math::LMetric<2>(), &result[i]);
-                  for (index_t i = 0; i < iterations; i++) {
+                  for (index_t ii = 0; ii < iterations; ii++) {
                     ++it;
                   }
                   // Tell the iterator that we are done using it so that the
@@ -1129,8 +1145,8 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
 
                   typename fl::ml::DualtreeDfs<Kde_t>::template
                   iterator<fl::math::WeightedLMetric<2, fl::data::MonolithicPoint<double> > > it = dualtree_engine.get_iterator(
-                                           w_index_args.metric, &result[0]);
-                  for (int i = 0; i < iterations; i++) {
+                                           w_index_args.metric, &result[i]);
+                  for (int ii = 0; ii < iterations; ii++) {
                     ++it;
                     // Tell the iterator that we are done using it so that the
                     // result can be finalized.
@@ -1187,7 +1203,7 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
                     typename fl::ml::DualtreeDfs<Kde_t>::template
                     iterator<fl::math::WeightedLMetric<2, fl::data::MonolithicPoint<double> > > it = dualtree_engine.get_iterator(
                                            w_index_args.metric, &result[i]);
-                    for (index_t i = 0; i < iterations; i++) {
+                    for (index_t ii = 0; ii < iterations; ii++) {
                       ++it;
                     }
                     // Tell the iterator that we are done using it so that the
@@ -1208,59 +1224,63 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
         }
         // we are going to compute the winning labels
         double local_accuracy=0;
-        for (index_t i = 0; i < references[k]->n_entries(); ++i) {
-          double score = 0;
-          index_t winner = -1;
-          double a_score=0;
-          double b_score=0;
-          for (index_t j = 0; j < result.size(); j++) {
-            double this_score = result[j].densities_[i] * priors[j];
-            if (this_score > score) {
-              score = this_score;
-              winner = j;
-            }
-            if (auc==true) {
-              if (k==auc_label) {
-                if (j==k) {
-                  a_score+=priors[j]*this_score;
-                } else {
-                  a_score-=priors[j]*this_score;
-                }
-              } else {
-                if (j==k) {
-                  b_score-=priors[j]*this_score;
-                } else {
-                  b_score+=priors[j]*this_score;
-                }
-              }
-            }
-          }
-          if (winner==k) {
-            local_accuracy+=1;
-          }
-          if (auc==true) {
-            if (k==auc_label) {
-              a_class_scores.push_back(a_score);
-            } else {
-              b_class_scores.push_back(b_score);
-            }
-          }
-        }
+        std::vector<double> local_a_class_scores;
+        std::vector<double> local_b_class_scores;
+        std::vector<index_t> winning_classes;
+        boost::shared_ptr<typename DataAccessType::IntegerTable_t> temp;
+        ComputeScoresForAuc(
+            (index_t)references.size(),
+            references[k]->n_entries(),
+            auc_label,
+            temp,
+            k,
+            result,
+            priors,
+            auc,
+            true,
+            &partial_scores,
+            &points_per_class,
+            &local_a_class_scores,
+            &local_b_class_scores,
+            &winning_classes,
+            &local_accuracy);
+
+            a_class_scores.insert(a_class_scores.end(), 
+            local_a_class_scores.begin(), local_a_class_scores.end());
+
+        b_class_scores.insert(b_class_scores.end(), 
+            local_b_class_scores.begin(), local_b_class_scores.end());
         total_accuracy+=local_accuracy;
         total_points+=references[k]->n_entries();
         local_accuracy=local_accuracy/references[k]->n_entries();
         partial_scores.push_back(local_accuracy);
         points_per_class.push_back(references[k]->n_entries());
+        fl::logger->Message() << "Checking class "<<k<<std::endl;
+        fl::logger->Message()<<"Class: "<<k<<", points: "
+          <<references[k]->n_entries()
+          <<", score: "<<100*local_accuracy<<"\%";
+        if (density_prefix!="") {
+          for (int32 i=0; i<references.size(); ++i) {
+            std::string name=data->GiveFilenameFromSequence(density_prefix, k*references.size()+i);
+            boost::shared_ptr<typename DataAccessType::DefaultTable_t> densities_table;
+            data->Attach(name, 
+                std::vector<index_t>(1, 1),
+                std::vector<index_t>(),
+                references[k]->n_entries(),
+                &densities_table);
+            for(index_t l=0; l<result[i].densities_.size(); ++l) {
+              densities_table->set(l, 0, result[i].densities_[l]);
+            }
+
+            data->Purge(name);
+            data->Detach(name);
+          }
+        }
       }
       fl::logger->Message() << "Classification score on all the references "
         <<"("<< total_points <<")" "set is " <<
-	          100.0*total_accuracy/total_points<<"%%";
-      fl::logger->Message() << "The score per class is ";
-      for(index_t i=0; i<points_per_class.size(); ++i) {
-        fl::logger->Message()<<"Class: "<<i<<", points: "<<points_per_class[i]
-            <<", score: "<<100*partial_scores[i]<<"%%";
-      }
-
+	          100.0*total_accuracy/total_points<<"\%";
+      
       if (auc) {
         double auc_score;
         bool compute_roc=false;
@@ -1286,10 +1306,11 @@ int fl::ml::Kde<boost::mpl::void_>::Core<TableType1>::Main(
           }
           data->Purge(file);
           data->Detach(file);
-        } else {
+        } 
+        if (auc) {
           fl::ml::ComputeAUC(a_class_scores, b_class_scores, &auc_score);
+          fl::logger->Message() << "The Area Under the curve (AUC) is "<< auc_score;
         }
-        fl::logger->Message() << "The Area Under the curve (AUC) is "<< auc_score;
       }
     } 
   }
@@ -1327,6 +1348,14 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
     "densities_out",
     boost::program_options::value<std::string>()->default_value(""),
     "OPTIONAL file to store computed densities."
+  )(
+    "densities_prefix_out", 
+    boost::program_options::value<std::string>(),
+    "OPTIONAL prefix for outputing densities in kda mode"
+  )(
+    "densities_num_out",
+    boost::program_options::value<int32>(),
+    "OPTIONAL number of densities files to use"
   )(
     "kernel",
     boost::program_options::value<std::string>()->default_value("epan"),
@@ -1472,18 +1501,19 @@ int fl::ml::Kde<boost::mpl::void_>::Main(
         std::vector<std::string> tokens2;
         boost::algorithm::split(tokens2, vm["priors"].as<std::string>(), 
             boost::algorithm::is_any_of(",:"));
-      
         if (tokens1.size() !=tokens2.size()) {
           fl::logger->Die() << "The number of priors need to equal the number "
           "of classes of reference sets.";
         }
-        std::vector<std::string> tokens3;
-        boost::algorithm::split(tokens3, vm["kda_bandwidths"].as<std::string>(), 
+      }
+    }
+    if (vm.count("kda_bandwidths")>0) {
+      std::vector<std::string> tokens3;
+      boost::algorithm::split(tokens3, vm["kda_bandwidths"].as<std::string>(), 
             boost::algorithm::is_any_of(",:"));
-        if (tokens1.size() !=tokens3.size()) {
-          fl::logger->Die() << "The number of --kda_bandwidths need to equal the number "
+      if (tokens1.size() !=tokens3.size()) {
+        fl::logger->Die() << "The number of --kda_bandwidths need to equal the number "
           "of classes of reference sets.";
-        }
       }
     }
   }

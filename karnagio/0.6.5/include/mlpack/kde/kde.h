@@ -136,6 +136,7 @@ class Kde {
               double bandwidth_factor_in,
               double relative_error_in,
               double probability_in);
+    
 
   private:
     Table_t *query_table_;
@@ -302,6 +303,26 @@ class Kde<boost::mpl::void_> {
     static bool ConstructBoostVariableMap(
       const std::vector<std::string> &args,
       boost::program_options::variables_map *vm);
+
+
+    template<typename DensityTableType, 
+             typename QueryLabelsTableType>
+    static void ComputeScoresForAuc(
+        const index_t references_size,
+        const index_t queries_n_entries,
+        const index_t auc_label,
+        boost::shared_ptr<QueryLabelsTableType> &query_labels,
+        int32 overall_label,
+        std::vector<DensityTableType> &densities,
+        const std::vector<double> &priors,
+        bool auc,
+        bool compute_score,
+        std::vector<double> *partial_scores,
+        std::vector<index_t> *points_per_class,
+        std::vector<double> *a_class_scores,
+        std::vector<double> *b_class_scores,
+        std::vector<index_t> *winning_classes,
+        double *total_accuracy);
 
     /**
      * @brief This is the main driver function that the user has to

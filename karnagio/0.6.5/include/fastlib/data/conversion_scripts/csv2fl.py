@@ -114,7 +114,7 @@ parser.add_option("--categorical", action="store", type="string",
          "N 0/1 features");
 parser.add_option("--categorical2double", action="store", type="string",
     dest="categorical2double", default="",
-    help="A comma separated list of integers refering to features that will "
+    help="(Not currently supporte) A comma separated list of integers refering to features that will "
          "be treated as categorical data, but stored as double. Syntax is similar to that for '--dense_double'. "
          "It will automatically detect the number of categories for each feature. "
          "If a feature has N different categories the feature will be expanded into "

@@ -29,6 +29,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mlpack/kde/dualtree_dfs.h"
 #include "mlpack/kde/dualtree_dfs_iterator_dev.h"
 
+extern index_t in_recursion_counter;
+
 template<typename ProblemType>
 ProblemType *fl::ml::DualtreeDfs<ProblemType>::problem() {
   return problem_;
@@ -168,7 +170,6 @@ void fl::ml::DualtreeDfs<ProblemType>::DualtreeBase_(
   typename ProblemType::Table_t::Tree_t *qnode,
   typename ProblemType::Table_t::Tree_t *rnode,
   typename ProblemType::Result_t *query_results) {
-
   // Clear the summary statistics of the current query node so that we
   // can refine it to better bounds.
   typename ProblemType::Statistic_t &qnode_stat =
@@ -201,17 +202,28 @@ void fl::ml::DualtreeDfs<ProblemType>::DualtreeBase_(
 
     // Reset the reference node iterator.
     rnode_iterator.Reset();
-    while (rnode_iterator.HasNext()) {
-
-      // Get the reference point and accumulate contribution.
-      typename ProblemType::Point_t r_col;
-      index_t r_col_id;
-      rnode_iterator.Next(&r_col, &r_col_id);
-      query_contribution.ApplyContribution(problem_->global(),
+    if (qnode==rnode) {
+      while (rnode_iterator.HasNext()) {
+        // Get the reference point and accumulate contribution.
+        typename ProblemType::Point_t r_col;
+        index_t r_col_id;
+        rnode_iterator.Next(&r_col, &r_col_id);
+        if (q_index==r_col_id) {
+          continue;
+        }
+        query_contribution.ApplyContribution(problem_->global(),
                                            metric, q_col, r_col);
-
-    } // end of iterating over each reference point.
-
+      } // end of iterating over each reference point.
+    } else  {
+      while (rnode_iterator.HasNext()) {
+        // Get the reference point and accumulate contribution.
+        typename ProblemType::Point_t r_col;
+        index_t r_col_id;
+        rnode_iterator.Next(&r_col, &r_col_id);
+        query_contribution.ApplyContribution(problem_->global(),
+                                           metric, q_col, r_col);
+      } // end of iterating over each reference point.
+    }
     // Each query point has taken care of all reference points.
     query_results->ApplyPostponed(q_index, query_contribution);
 

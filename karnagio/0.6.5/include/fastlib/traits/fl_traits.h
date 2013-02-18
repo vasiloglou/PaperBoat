@@ -92,5 +92,5 @@ template<> struct
       You_have_a_precision_conflict<long double, int> {};
 
 
-};
+}
 #endif
