@@ -1063,7 +1063,7 @@ namespace fl { namespace ml {
         if (tokens.size()!=2) {
           fl::logger->Die()<<"Something is wrong with the --references_in flag";
         }
-        references_in=tokens[1]+"0";
+        references_in=ws->GiveFilenameFromSequence(tokens[1], 0);
         break;
       }
       if (fl::StringStartsWith(args[i],"--references_in=")) {

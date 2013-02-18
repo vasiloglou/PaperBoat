@@ -252,7 +252,28 @@ class CppBlas<double> {
       F77_FUNC(dtrsm)(a1, a2, a3, a4, a5 , a6, a7, a8, a9, a10, a11);
     }
 };  //CppBlas
-
-}; // namespace la
-}; // namespace fl
+template<>
+class CppBlas<int32> {
+  public:
+    static double dot(f77_integer CONST_REF a1, const int32 *a2, f77_integer CONST_REF a3, const int32 *a4, f77_integer CONST_REF a5) {
+      double result=0;
+      for(f77_integer i=0; i<a1; ++i) {
+        result+=a2[i]*a4[i];
+      }
+      return result;
+    }
+};
+template<>
+class CppBlas<uint32> {
+  public:
+    static double dot(f77_integer CONST_REF a1, const uint32 *a2, f77_integer CONST_REF a3, const uint32 *a4, f77_integer CONST_REF a5) {
+      double result=0;
+      for(f77_integer i=0; i<a1; ++i) {
+        result+=a2[i]*a4[i];
+      }
+      return result;
+    }
+};
+} // namespace la
+} // namespace fl
 #endif

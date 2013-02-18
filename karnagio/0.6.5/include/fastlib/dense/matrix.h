@@ -1200,6 +1200,6 @@ class Matrix : virtual public fl::dense::ops {
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-}; // namespace dense
-}; // namespace fl
+} // namespace dense
+} // namespace fl
 #endif

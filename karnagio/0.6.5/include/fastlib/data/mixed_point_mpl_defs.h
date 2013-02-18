@@ -514,7 +514,7 @@ struct MetaDataSerialize1 {
     template<typename PointType, typename Archive>
     static void Serialize(const PointType *point, Archive &ar) {
       ar << boost::serialization::make_nvp("meta_data_", point->meta_data());
-    };
+    }
 
     template<typename PointType, typename Archive>
     static void Serialize(PointType *point, Archive &ar) {
@@ -527,11 +527,11 @@ struct MetaDataSerialize2 {
  struct type {
    template<typename PointType, typename Archive>
    static void Serialize(const PointType *point, Archive &ar) {
-   };
+   }
 
    template<typename PointType, typename Archive>
    static void Serialize(PointType *point, Archive &ar) {
-   };
+   }
  };
 };
 

@@ -45,7 +45,7 @@ namespace fl {
 namespace table {
 template<typename>
 class Table;
-};
+}
 /**
  * @brief namespace tree, contains all the structures for building multidimensional trees
  *
@@ -71,7 +71,7 @@ class Tree  {
   public:
     typedef Tree<TemplateMap>  Tree_t;
 
-    typedef typename TemplateMap::TreeArgs TreeMap_t;;
+    typedef typename TemplateMap::TreeArgs TreeMap_t;
 
     typedef typename TreeMap_t::TreeSpecType TreeSpec_t;
 
@@ -797,7 +797,7 @@ void Tree<TemplateMap>::Print() const {
 }
 
 
-}; // tree namespace
-}; // fl namespace
+} // tree namespace
+} // fl namespace
 
 #endif

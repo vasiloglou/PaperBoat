@@ -138,7 +138,7 @@ int fl::ml::Moe<boost::mpl::void_>::Core<TableType1>::Main(
     std::vector<boost::shared_ptr<TableType1> > reference_tables(k_clusters);
     for(int32 i=0; i<k_clusters; ++i) {
       reference_tables[i].reset(new TableType1());
-      ws->Attach(fl::StitchStrings("reference", i),
+      ws->Attach(ws->GiveFilenameFromSequence("reference", i),
           references_table->dense_sizes(),
           references_table->sparse_sizes(), 
           0,
@@ -151,24 +151,26 @@ int fl::ml::Moe<boost::mpl::void_>::Core<TableType1>::Main(
       reference_tables[memberships[i]]->push_back(point1);    
     }   
     for(int32 i=0; i<k_clusters; ++i) {
-      ws->Purge(fl::StitchStrings("reference", i));
-      ws->Detach(fl::StitchStrings("reference", i));
+      ws->Purge(ws->GiveFilenameFromSequence("reference", i));
+      ws->Detach(ws->GiveFilenameFromSequence("reference", i));
     } 
     for(int32 i=0; i<k_clusters; ++i) {
       std::vector<std::string> local_args=expert_args;
-      local_args.push_back(fl::StitchStrings("--references_in=reference",
-            i));
+      local_args.push_back(fl::StitchStrings("--references_in=", 
+            ws->GiveFilenameFromSequence("reference",
+            i)));
       local_args.push_back("--check_columns=1");
+      // This needs to change
       for(int32 j=0; j<expert_outputs.size(); ++j) {
         std::string arg(expert_outputs[j]);
-        local_args.push_back(fl::StitchStrings(arg, i));
+        local_args.push_back(ws->GiveFilenameFromSequence(arg, i));
       }
-      std::cout<<"args"<<std::endl;
-      for(std::vector<std::string>::iterator it=local_args.begin();
-          it!=local_args.end(); ++it) {
-        std::cout<<*it<<", ";
-      }
-      std::cout<<std::endl;
+      //std::cout<<"args"<<std::endl;
+      //for(std::vector<std::string>::iterator it=local_args.begin();
+      //    it!=local_args.end(); ++it) {
+      //  std::cout<<*it<<", ";
+      //}
+      //std::cout<<std::endl;
 
       if (expert_log==false) {
         logger->SuspendLogging();
