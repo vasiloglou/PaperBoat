@@ -689,7 +689,7 @@ class EmptyBound {
 
     }
 };
-}; // tree namespace
-}; // fl namespace
+} // tree namespace
+} // fl namespace
 
 #endif

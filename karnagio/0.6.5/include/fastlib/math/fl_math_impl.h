@@ -179,8 +179,8 @@ inline double RandomNormal(double mean, double variance) {
 //inline int Random(int lo, int hi_exclusive) {
 //  return (rand() % (hi_exclusive - lo)) + lo;
 //}
-}; // namespace math
-}; // namespace fl
+} // namespace math
+} // namespace fl
 
 namespace math__private {
 template < typename Precision, int t_numerator, int t_denominator = 1 >
@@ -721,8 +721,8 @@ inline unsigned IntLog2(unsigned i) {
   return l;
 }
 
-}; // namespace math
-}; // namespace fl
+} // namespace math
+} // namespace fl
 
 
 

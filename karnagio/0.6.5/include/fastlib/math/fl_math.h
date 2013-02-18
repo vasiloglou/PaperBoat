@@ -163,8 +163,8 @@ inline int Random(int lo, int hi_exclusive);
  */
 inline double RandomNormal();
 inline double RandomNormal(double mean, double variance);
-}; // namespace math
-}; // namespace fl
+} // namespace math
+} // namespace fl
 
 namespace fl {
 namespace math {
@@ -310,8 +310,8 @@ inline bool IsPowerTwo(TAnyIntegerType i);
  */
 inline unsigned int IntLog2(unsigned int i);
 
-}; // namespace math
-}; // namespace fl
+} // namespace math
+} // namespace fl
 
 #include "fl_math_impl.h"
 

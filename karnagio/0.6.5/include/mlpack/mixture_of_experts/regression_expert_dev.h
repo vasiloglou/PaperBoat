@@ -113,7 +113,14 @@ namespace fl {
         fl::logger->Die()<<"You should set the --prediction_index_prefix "
          "for the regressor expert"; 
       }
-      coeff_index_=boost::lexical_cast<index_t>(argmap["--prediction_index_prefix"]);
+      try {
+        coeff_index_=boost::lexical_cast<index_t>(argmap["--prediction_index_prefix"]);
+      }
+      catch(...) {
+        fl::logger->Die()<<"--prediction_index_prefix must be an integer not "
+          "("<<  argmap["--prediction_index_prefix"]
+             << ")";
+      }
       if (argmap.count("--references_in=references")) {
         fl::logger->Die()<<"You are not allowed to set "
           "--references_in in the expert arguments";     

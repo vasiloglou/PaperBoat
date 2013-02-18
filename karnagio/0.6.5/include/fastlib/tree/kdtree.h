@@ -288,7 +288,7 @@ class MedianKdTree {
         }
     };
 };
-}; // tree namespace
-}; // fl namespace
+} // tree namespace
+} // fl namespace
 
 #endif

@@ -44,5 +44,5 @@ namespace fl {
 
  static boost::mt19937 mtn19937_gen(std::time(0));
  static boost::scoped_ptr<Randomizer> randomizer(new Randomizer());
-};
+}
 #endif

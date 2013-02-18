@@ -55,8 +55,8 @@ void TableNorm<boost::mpl::void_>::Core<WorkSpaceType>::operator()(
     "REQUIRED The type can be:\n"
     "  rows_l1    : normalizes the rows with L1 metric\n"
     "  rows_l2    : normalizes the rows with L2 metric\n"
-    "  columns_l1 : normalizes the columns with L1 metric\n"
-    "  columns_l2 : normalizes the columns with L2 metric\n"
+    "  cols_l1    : normalizes the columns with L1 metric\n"
+    "  cols_l2    : normalizes the columns with L2 metric\n"
     "A valid option would also be rows_l1,columns_l1 or any combination "
    " between columns and row" 
   );
@@ -240,7 +240,7 @@ int TableNorm<boost::mpl::void_>::Run(
       if (tokens.size()!=2) {
         fl::logger->Die()<<"Something is wrong with the --references_in flag";
       }
-      references_in=tokens[1]+"0";
+      references_in=ws->GiveFilenameFromSequence(tokens[1], 0);
       break;
     }
     if (fl::StringStartsWith(args[i],"--references_in=")) {

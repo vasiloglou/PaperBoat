@@ -32,6 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mlpack/kde/mean_variance_pair.h"
 
 
+extern index_t in_post_process_counter;
+
 namespace fl {
 namespace ml {
 
@@ -232,18 +234,20 @@ class KdeResult {
 
     ~KdeResult() {
     }
-
+    
     template<typename MetricType, typename GlobalType>
     void PostProcess(const MetricType &metric,
                      index_t q_index,
                      const GlobalType &global,
                      const bool is_monochromatic) {
-      if (is_monochromatic) {
-        densities_l_[q_index] = (CalcPrecision_t)(densities_l_[q_index] -
-                                1.0);
-        densities_u_[q_index] = (CalcPrecision_t)(densities_u_[q_index] -
-                                1.0);
-      }
+// The above assumption seems to be wrong and it is not working
+//      if (is_monochromatic) {
+//        in_post_process_counter++;
+//        densities_l_[q_index] = (CalcPrecision_t)(densities_l_[q_index] -
+//                                1.0);
+//        densities_u_[q_index] = (CalcPrecision_t)(densities_u_[q_index] -
+//                                1.0);
+//      }
 
       densities_[q_index] = 0.5 * (densities_l_[q_index] +
                                    densities_u_[q_index]);

@@ -31,7 +31,7 @@ boost::mutex logger_mutex;
 
 Exception::Exception() : message_("something bad happened at Ismion") {
 
-};
+}
 
 Exception::~Exception() throw(){
 
@@ -46,14 +46,14 @@ const char* Exception::what() const {
 
 TypeException::TypeException() {
 
-};
+}
 
 TypeException::TypeException(const std::string &message) : fl::Exception(message){
 }
 
 TypeException::~TypeException() throw (){
 
-};
+}
 
 Logger::Stream::Stream(std::ostream &s, boost::mutex &m) : mutex_(m), s_(s), stream_call_(0) {
   message_.reset(new std::ostringstream());
@@ -378,5 +378,5 @@ void Logger::PrintMetaInfo(Stream &stream) {
   }
   logger_mutex.unlock();
 }
-};
+}
 

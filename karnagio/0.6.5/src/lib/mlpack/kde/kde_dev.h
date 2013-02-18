@@ -77,6 +77,106 @@ void fl::ml::Kde<TemplateMap>::Init(
                relative_error_in, probability_in);
 }
 
+template<typename DensityTableType, typename QueryLabelsTableType>
+void fl::ml::Kde<boost::mpl::void_>::ComputeScoresForAuc(
+    const index_t references_size,
+    const index_t queries_n_entries,
+    const index_t auc_label,
+    boost::shared_ptr<QueryLabelsTableType> &query_labels,
+    int32_t overall_label,
+    std::vector<DensityTableType> &densities,
+    const std::vector<double> &priors,
+    bool auc,
+    bool compute_score,
+    std::vector<double> *partial_scores,
+    std::vector<index_t> *points_per_class,
+    std::vector<double> *a_class_scores,
+    std::vector<double> *b_class_scores,
+    std::vector<index_t> *winning_classes,
+    double *total_accuracy) {
+
+  winning_classes->resize(queries_n_entries);
+  std::fill(winning_classes->begin(), winning_classes->end(), 0);
+  partial_scores->resize(references_size);
+  std::fill(partial_scores->begin(), partial_scores->end(), 0);
+  points_per_class->resize(references_size);
+  std::fill(points_per_class->begin(), points_per_class->end(),0);
+  for (index_t i = 0; i < queries_n_entries; ++i) {
+    double score = -std::numeric_limits<double>::max();
+    index_t winner = -1;
+    double a_score=-std::numeric_limits<double>::max();
+    double b_score=-std::numeric_limits<double>::max();
+    int label=-1;
+    if (compute_score==true) {
+      if (query_labels.get()!=NULL) {
+        typename QueryLabelsTableType::Point_t point;
+        query_labels->get(i, &point);
+        label=point[0];
+      } else {
+        label=overall_label;
+      }
+    } else {
+      
+    }
+    
+    double auc_kde_score=densities[auc_label].densities_[i]*priors[auc_label];
+    for (index_t j = 0; j < densities.size(); j++) {
+      double this_score = densities[j].densities_[i] * priors[j];
+      if (this_score<0) {
+        fl::logger->Warning()<<"Detected negative density value!!"<<std::endl;
+      }
+      if (boost::math::isnan(this_score)==true) {
+        fl::logger->Warning()<<"Detected nan density value!!"<<std::endl;
+      }
+      if (boost::math::isinf(this_score)==true) {
+        fl::logger->Warning()<<"Detected inf density value!!"<<std::endl;
+      }
+      if (this_score > score) {
+        score = this_score;
+        winner = j;
+      } else {
+        // We have to split ties equally so that we don't have artifacts
+        if (this_score==score) {
+          if (fl::math::Random(0.0, 1.0)<0.5) {
+            score = this_score;
+            winner = j;
+          }
+        }
+      }
+      if (auc==true && compute_score==true) {
+        if(j==auc_label) {
+          continue;
+        }
+        if (label==auc_label) {
+          a_score=std::max(this_score, a_score);
+        } else {
+          b_score=std::max(this_score, b_score);
+        }
+      }
+    }
+    if (label==auc_label) {
+      a_score=auc_kde_score-a_score;
+    } else {
+      b_score=auc_kde_score-b_score;
+    }
+    (*winning_classes)[i]=winner;
+    if (compute_score==true) {
+      (*points_per_class)[label]+=1;
+      if (winner==label) {
+        (*total_accuracy)+=1;
+        (*partial_scores)[label]+=1;
+      }
+    }
+    if (compute_score==true && auc==true) {
+      if (label==auc_label) {
+        a_class_scores->push_back(a_score);
+      } else {
+        b_class_scores->push_back(b_score);
+      }
+    }
+  }
+}
+
 template<typename TemplateMap>
 void fl::ml::Kde<TemplateMap>::set_bandwidth(double bandwidth_in) {
   global_.set_bandwidth(bandwidth_in);

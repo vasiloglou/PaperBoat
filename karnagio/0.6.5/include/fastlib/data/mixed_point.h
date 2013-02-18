@@ -403,7 +403,7 @@ MixedPoint<ParamList>::MixedPoint() {
   should_free_ = false;
   meta_data_ptr() = NULL;
   size_=0;
-};
+}
 
 template<typename ParamList>
 MixedPoint<ParamList>::~MixedPoint() {
@@ -414,7 +414,7 @@ MixedPoint<ParamList>::~MixedPoint() {
     DestructSelector2
     >::type::Destruct(this);
   }
-};
+}
 
 /**
  * @brief constructor that sets the sizes
@@ -624,7 +624,7 @@ void MixedPoint<ParamList>::Print(StreamType &stream, std::string delim) const {
 
 template<typename ParamList>
 void MixedPoint<ParamList>::set_modified() {
-};
+}
 
 template<typename ParamList>
 typename boost::mpl::if_ <

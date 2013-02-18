@@ -51,7 +51,7 @@ POSSIBILITY OF SUCH DAMAGE.
  * Needed for proper linking in C++.
  */
 #ifdef __cplusplus
-#define EXTERN_C_END };
+#define EXTERN_C_END }
 #else
 #define EXTERN_C_END
 #endif

@@ -30,12 +30,15 @@ POSSIBILITY OF SUCH DAMAGE.
 namespace fl {
 namespace ml {
 template < typename ContainerType>
-void ComputeAUC(ContainerType &a_scores,
-                ContainerType &b_scores, double *auc,
+void ComputeAUC(ContainerType a_scores,
+                ContainerType b_scores, double *auc,
                 std::vector<std::pair<double, double> > *roc) {
-  BOOST_ASSERT(a_scores.size() > 0);
-  BOOST_ASSERT(b_scores.size() > 0);
+  FL_SCOPED_LOG(Auc);
   *auc = 0;
+  if (a_scores.size()==0 || b_scores.size()==0) {
+    fl::logger->Warning()<<"One of score classes is empty";
+    return;
+  }
   std::sort(b_scores.begin(), b_scores.end(),
       std::greater<typename ContainerType::value_type>());
   std::sort(a_scores.begin(), a_scores.end(), 
@@ -46,32 +49,30 @@ void ComputeAUC(ContainerType &a_scores,
   for (it1 = a_scores.begin(); it1 != a_scores.end(); ++it1) {
     if (*it1 >*it) {
       *auc+=b_scores.end()-it;
+      if (roc!=NULL) {
+        double a=double(it1-a_scores.begin())/a_scores.size();
+        double b=double(it - b_scores.begin())/b_scores.size();
+        roc->push_back(std::make_pair(a, b));
+      }
       continue;
     }
     for (it2 = it; it2 != b_scores.end(); ++it2) {
       if (*it2<*it1) {
         it=it2;
         *auc += b_scores.end()-it2;
+        if (roc!=NULL) {
+          double a=double(it1-a_scores.begin())/a_scores.size();
+          double b=double(it - b_scores.begin())/b_scores.size();
+          roc->push_back(std::make_pair(a, b));
+        }
         break;
       }
     }
   }
-  *auc /= (a_scores.size() * b_scores.size());
   if (roc!=NULL) {
-    double min=a_scores.back();
-    double max=a_scores.front();
-    int n_chunks=50;
-    double chunk=(max-min)/n_chunks;
-    for(int i=0; i<n_chunks+1; ++i) {
-      it1=std::upper_bound(a_scores.begin(), a_scores.end(), max-i*chunk,
-          std::greater<typename ContainerType::value_type>());
-      double a=1.0*(it1-a_scores.begin())/a_scores.size();
-      it1=std::upper_bound(b_scores.begin(), b_scores.end(), max-i*chunk,
-          std::greater<typename ContainerType::value_type>());
-      double b=1.0*(it1-b_scores.begin())/b_scores.size();
-      roc->push_back(std::make_pair(a,b));
-    }
+    roc->push_back(std::make_pair(1, 0));
   }
+  *auc /= (a_scores.size() * b_scores.size());
 }
 
 template < typename ContainerType>

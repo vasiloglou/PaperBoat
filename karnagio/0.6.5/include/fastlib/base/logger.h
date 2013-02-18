@@ -177,5 +177,5 @@ class SilentLogger : public Logger {
 extern boost::scoped_ptr<Logger> logger;
 extern boost::exception_ptr global_exception;
 extern boost::shared_ptr<boost::mutex> global_exception_mutex;
-};
+}
 #endif

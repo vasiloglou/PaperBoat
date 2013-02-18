@@ -872,6 +872,6 @@ class CppLapack<double> {
 
 }; //CppLapack
 
-}; //la name space
-}; //fl name space
+} //la name space
+} //fl name space
 #endif

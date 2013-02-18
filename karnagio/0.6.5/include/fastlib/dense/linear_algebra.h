@@ -1816,7 +1816,7 @@ class ops {
           Matrix<PrecisionType, false> tmp;
           tmp.Copy(A);
           SchurExpert<PrecisionType>(&tmp, w_real->ptr(), w_imag->ptr(), NULL, success);
-        };
+        }
 
         /** @brief The tridiagonal solver.
          */

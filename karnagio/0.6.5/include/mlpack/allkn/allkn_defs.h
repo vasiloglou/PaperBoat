@@ -61,9 +61,6 @@ int AllKN<boost::mpl::void_>::Core<TableType>::Main(
   // index_t leaf_size=0;
   index_t iterations=0;
   std::string labels_out;
-  std::string references_out;
-  std::string queries_out;
-  std::string serialize;
   bool auc=true;
   index_t auc_label=1; 
   std::string roc_out="";
@@ -95,9 +92,6 @@ int AllKN<boost::mpl::void_>::Core<TableType>::Main(
     // leaf_size = vm["leaf_size"].as<index_t>();
     iterations = vm["iterations"].as<index_t>();
     labels_out = vm["labels_out"].as<std::string>();
-    references_out = vm["references_out"].as<std::string>();
-    queries_out = vm["queries_out"].as<std::string>();
-    serialize = vm["serialize"].as<std::string>();
     auc=vm["auc"].as<bool>();
     auc_label=vm["auc_label"].as<int>();
     roc_out=vm["roc_out"].as<std::string>();
@@ -1138,31 +1132,10 @@ int AllKN<boost::mpl::void_>::Main(
     boost::program_options::value<std::string>(),
     "REQUIRED file containing reference data"
   )(
-    "references_out",
-    boost::program_options::value<std::string>()->default_value(""),
-    "OPTIONAL file where the references_in data will be serialized. You can"
-    " use this option to save your data after they have been indexed with a tree."
-    " Then you can reuse them for this or another algorithm without having to"
-    " rebuild the tree"
-  )(
     "queries_in",
     boost::program_options::value<std::string>()->default_value(""),
     "OPTIONAL file containing query positions.  If omitted, allkn "
     "finds leave-one-out neighbors for each reference point."
-  )(
-    "queries_out", 
-    boost::program_options::value<std::string>()->default_value(""),
-    "OPTIONAL file where the queries_in data will be serialized. You can"
-    " use this option to save your data after they have been indexed with a tree."
-    " Then you can reuse them for this or another algorithm without having to"
-    " rebuild the tree"
-  )(
-    "serialize",
-    boost::program_options::value<std::string>()->default_value("binary"),
-    "OPTIONAL when you serialize the tables to files, you have the option to use:\n "
-    "  binary for smaller files\n"
-    "  text   for portability  (bigger files)\n"
-    "  xml    for interpretability and portability (even bigger files)"
   )(
     "indices_out",
     boost::program_options::value<std::string>()->default_value(""),
@@ -1213,11 +1186,6 @@ int AllKN<boost::mpl::void_>::Main(
     "The query radius for the all-range-neighbors method.\n"
     "One of --k_neighbors or --r_neighbors must be given."
   )(
-    "point",
-    boost::program_options::value<std::string>()->default_value("dense"),
-    "Point type used by allkn.  One of:\n"
-    "  dense, sparse, dense_sparse, categorical, dense_categorical"
-  )(
     "metric",
     boost::program_options::value<std::string>()->default_value("l2"),
     "Metric function used by allkn.  One of:\n"
@@ -1248,16 +1216,6 @@ int AllKN<boost::mpl::void_>::Main(
     boost::program_options::value<std::string>()->default_value(""),
     "OPTIONAL file for exporting the ROC curve"
   )(
-    "tree",
-    boost::program_options::value<std::string>()->default_value("kdtree"),
-    "Tree structure used by allkn.  One of:\n"
-    "  kdtree, balltree"
-  )(
-    "leaf_size",
-    boost::program_options::value<index_t>()->default_value(20),
-    "Maximum number of points at a leaf of the tree.  More saves on tree "
-    "overhead but too much hurts asymptotic run-time."
-  )(
     "iterations",
     boost::program_options::value<index_t>()->default_value(-1),
     "Allkn can run in either batch or progressive mode.  If --iterations=i "
@@ -1269,23 +1227,6 @@ int AllKN<boost::mpl::void_>::Main(
     "If this flag is set true then it outputs some statistics about the tree after it is built. "
     "We suggest you set that flag on. If the tree is not correctly built, due to wrong options"
     " or due to pathological data then there is not point in running nearest neighbors"
-  )(
-    "cores",
-    boost::program_options::value<int>()->default_value(1),
-    "Number of cores to use for running the algorithm. If you use large number of cores "
-    "increase the leaf_size, This feature is disabled for the moment" 
-  )(
-    "log",
-    boost::program_options::value<std::string>()->default_value(""),
-    "A file to receive the log, or omit for stdout."
-  )(
-    "loglevel",
-    boost::program_options::value<std::string>()->default_value("debug"),
-    "Level of log detail.  One of:\n"
-    "  debug: log everything\n"
-    "  verbose: log messages and warnings\n"
-    "  warning: log only warnings\n"
-    "  silent: no logging"
   );
 
   boost::program_options::variables_map vm;
