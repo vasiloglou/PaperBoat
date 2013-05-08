@@ -85,6 +85,11 @@ class GreedyKernelPca: boost::noncopyable {
         fl::dense::Matrix<double, true>
         *current_kernel_matrix_inverse_row_sum_;
 
+        index_t dictionary_limit_;
+        // The threshold for determining whether to add a given new
+        // point to the dictionary or not.
+        double greedy_kernel_pca_threshold_;
+
       private:
 
         void RandomPermutation_(std::vector<int> &permutation);
@@ -110,6 +115,13 @@ class GreedyKernelPca: boost::noncopyable {
           return do_centering;
         }
 
+        Dictionary() {
+          dictionary_limit_=100;
+          greedy_kernel_pca_threshold_=1e-3;
+          current_kernel_matrix_=NULL;
+          current_kernel_matrix_inverse_=NULL;
+          current_kernel_matrix_inverse_row_sum_=NULL;
+        }
         ~Dictionary() {
           delete current_kernel_matrix_;
           delete current_kernel_matrix_inverse_;
@@ -155,6 +167,11 @@ class GreedyKernelPca: boost::noncopyable {
         fl::dense::Matrix<double, false> *current_kernel_matrix();
 
         fl::dense::Matrix<double, false> *current_kernel_matrix_inverse();
+
+        void set_dictionary_limit(index_t dictionary_limit);
+
+        void set_greedy_kernel_pca_threshold(double greedy_kernel_pca_threshold);
+
     };
 
   public:
@@ -162,6 +179,8 @@ class GreedyKernelPca: boost::noncopyable {
     static void Train(TableType &training_set,
                       const KernelType &kernel,
                       const int &num_components,
+                      double greedy_kernel_pca_threshold,
+                      index_t dictionary_limit,
                       ResultType *result);
 };
 

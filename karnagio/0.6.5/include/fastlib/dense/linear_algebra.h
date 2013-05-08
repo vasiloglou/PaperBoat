@@ -776,6 +776,29 @@ class ops {
                                          beta, y->ptr(), 1);
           }
         }
+        
+        template<typename PrecisionType>
+        MulExpert(const PrecisionType alpha,
+                  const Matrix<PrecisionType, false> &A,
+                  const Matrix<PrecisionType, true> &x,
+                  PrecisionType beta,
+                  Matrix<PrecisionType, false> *y) {
+          DEBUG_ASSERT(x.ptr() != y->ptr());
+          DEBUG_SAME_SIZE(IsTransA?A.n_cols():A.n_rows(), y->n_rows());
+          DEBUG_SAME_SIZE(x.n_cols(), y->n_cols());
+          if (IsTransA == true) {
+            DEBUG_SAME_SIZE(A.n_rows(), x.n_rows());
+            CppBlas<PrecisionType>::gemv("T", A.n_rows(), A.n_cols(),
+                                         alpha, A.ptr(), A.n_rows(), x.ptr(), 1,
+                                         beta, y->ptr(), 1);
+          }
+          else {
+            DEBUG_SAME_SIZE(A.n_cols(), x.n_rows());
+            CppBlas<PrecisionType>::gemv("N", A.n_rows(), A.n_cols(),
+                                         alpha, A.ptr(), A.n_rows(), x.ptr(), 1,
+                                         beta, y->ptr(), 1);
+          }
+        }
 
         template<typename PrecisionType>
         MulExpert(PrecisionType alpha,
@@ -911,6 +934,30 @@ class ops {
           MulExpert<IsTransA, IsTransB>(
             PrecisionType(1.0), A, B, PrecisionType(0.0), C);
         }
+        template<typename PrecisionType>
+        Mul(const Matrix<PrecisionType, false> &A,
+            const Matrix<PrecisionType, true> &B,
+            Matrix<PrecisionType, false> *C) {
+          index_t nr = 0;
+          index_t nc = 0;
+          if (IsTransA == true) {
+            nr = A.n_cols();
+          }
+          else {
+            nr = A.n_rows();
+          }
+          if (IsTransB == true) {
+            nc = B.n_rows();
+          }
+          else {
+            nc = B.n_cols();
+          }
+
+          AllocationTrait<M>::Init(nr, nc, C);
+          MulExpert<IsTransA, IsTransB>(
+            PrecisionType(1.0), A, B, PrecisionType(0.0), C);
+        }
+
     };
 
 
@@ -1346,10 +1393,10 @@ class ops {
     template<fl::la::MemoryAlloc M>
     class Solve {
       public:
-        template<typename PrecisionType, bool IsVectorBool>
+        template<typename PrecisionType, bool IsVectorBool1, bool IsVectorBool2>
         Solve(const Matrix<PrecisionType, false> &A,
-              const Matrix<PrecisionType, IsVectorBool> &B,
-              Matrix<PrecisionType, IsVectorBool> *X,
+              const Matrix<PrecisionType, IsVectorBool1> &B,
+              Matrix<PrecisionType, IsVectorBool2> *X,
               success_t *success) {
           DEBUG_MATSQUARE(A);
           DEBUG_SAME_SIZE(A.n_rows(), B.n_rows());
@@ -2567,7 +2614,7 @@ class ops {
           Solve<M>(r_xx_mat, r_xy_mat, a, success);
           if unlikely(*success != SUCCESS_PASS) {
             if (*success == SUCCESS_FAIL) {
-              fl::logger->Die()<<"Least square fit failed \n";
+              fl::logger->Warning()<<"Least square fit failed \n";
             }
             else {
               fl::logger->Warning()<<"Least square fit returned a warning ";

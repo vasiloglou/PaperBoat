@@ -916,7 +916,7 @@ class Matrix : virtual public fl::dense::ops {
       fl::You_have_a_precision_conflict<Precision, OtherPrecision>();
       DEBUG_SAME_SIZE(n_elements_, other.n_elements());
 
-      CopyValues_(ptr_, other.ptr_, n_elements_);
+      CopyValues_(ptr_, other.ptr(), n_elements_);
     }
 
     template<typename OtherPrecision>
