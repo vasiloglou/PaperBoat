@@ -110,7 +110,7 @@ namespace fl {namespace ml{
       };
     
       template<typename WorkSpaceType>
-      static int Run(WorkSpaceType *data,
+      static int Run(WorkSpaceType *ws,
           const std::vector<std::string> &args);
 
   };

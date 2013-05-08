@@ -658,7 +658,17 @@ private:
                                  MonolithicPoint<CalcPrecision_t>* const y) {
       fl::dense::ops::AddExpert(alpha, x, y);
     }
-
+    
+    static inline void AddExpert(const CalcPrecision_t alpha,
+                                 const fl::dense::Matrix<CalcPrecision_t, true> &x,
+                                 MonolithicPoint<CalcPrecision_t>* const y) {
+      fl::dense::ops::AddExpert(alpha, x, y);
+    }
+    static inline void AddExpert(const CalcPrecision_t alpha,
+                                 const fl::dense::Matrix<CalcPrecision_t, false> &x,
+                                 MonolithicPoint<CalcPrecision_t>* const y) {
+      fl::dense::ops::AddExpert(alpha, x, y);
+    }
     /**
      *  @brief monolithic added with a sparse
      *

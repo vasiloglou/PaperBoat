@@ -194,6 +194,12 @@ class Table : boost::noncopyable {
               ContainerType dense_dimensions,
               ContainerType sparse_dimensions,
               const index_t num_of_points);
+    /**
+     * @brief Initializes the data structures in the table from the header provided.
+     *        No points are added. Expected to be used in conjunction with push_back()
+     *        function for extendable tables.
+     */
+    void Init(const std::string &header);
     void Destruct();
     void Save();
     // Carefull

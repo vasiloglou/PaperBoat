@@ -26,7 +26,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "mlpack/kernel_pca/kernel_pca_defs.h"
 #include "mlpack/kernel_pca/greedy_kernel_pca_dev.h"
-#include "mlpack/kernel_pca/matrix_free_kernel_pca_dev.h"
 #include "fastlib/workspace/workspace_defs.h"
 #include "fastlib/table/branch_on_table_dev.h"
 #include "fastlib/table/table_dev.h"

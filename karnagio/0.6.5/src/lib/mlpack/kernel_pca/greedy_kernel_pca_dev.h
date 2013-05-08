@@ -28,6 +28,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mlpack/kernel_pca/greedy_kernel_pca.h"
 #include "mlpack/kernel_pca/greedy_kernel_pca_defs.h"
 #include "mlpack/kernel_pca/dense_kernel_matrix_inverse.h"
+#include "fastlib/util/timer.h"
 
 namespace fl {
 namespace ml {
@@ -193,6 +194,19 @@ Dictionary<KernelType>::current_kernel_matrix_inverse() {
 
 template<typename TableType, bool do_centering>
 template<typename KernelType>
+void GreedyKernelPca<TableType, do_centering>::Dictionary<KernelType>::set_dictionary_limit(
+    index_t dictionary_limit) {
+  dictionary_limit_=dictionary_limit;
+}
+
+template<typename TableType, bool do_centering>
+template<typename KernelType>
+void GreedyKernelPca<TableType, do_centering>::Dictionary<KernelType>::set_greedy_kernel_pca_threshold(double greedy_kernel_pca_threshold) {
+  greedy_kernel_pca_threshold_=greedy_kernel_pca_threshold;
+}
+
+template<typename TableType, bool do_centering>
+template<typename KernelType>
 int GreedyKernelPca<TableType, do_centering>::
 Dictionary<KernelType>::size() const {
   return point_indices_in_dictionary_.size();
@@ -204,11 +218,11 @@ void GreedyKernelPca<TableType, do_centering>::
 Dictionary<KernelType>::AddBasis(
   const int &iteration_number,
   const KernelType &kernel) {
-
-  // The threshold for determining whether to add a given new
-  // point to the dictionary or not.
-  const double greedy_kernel_pca_threshold = 1e-3;
-
+  FL_SCOPED_LOG(AddBasis);
+  if (point_indices_in_dictionary_.size()>=dictionary_limit_) {
+    fl::logger->Warning()<<"Dictionary is full, cannot add more vectors";
+    return;
+  }
   // The new point to consider for adding.
   int new_point_index = random_permutation_[iteration_number];
 
@@ -228,7 +242,6 @@ Dictionary<KernelType>::AddBasis(
     temp_kernel_vector[i] = kernel.Dot(new_point,
                                        basis_point);
   }
-
   // Compute the matrix-vector product.
   fl::dense::Matrix< double, true > inverse_times_kernel_vector;
   fl::dense::ops::Mul<fl::la::Init>(*current_kernel_matrix_inverse_,
@@ -239,10 +252,9 @@ Dictionary<KernelType>::AddBasis(
   double projection_error =
     kernel.NormSq(new_point) -
     fl::la::Dot(temp_kernel_vector, inverse_times_kernel_vector);
-
   // If the projection error is above the threshold, add it to the
   // dictionary.
-  if (projection_error > greedy_kernel_pca_threshold) {
+  if (projection_error > greedy_kernel_pca_threshold_) {
 
     UpdateDictionary_(new_point_index, temp_kernel_vector, projection_error,
                       inverse_times_kernel_vector);
@@ -324,20 +336,30 @@ void GreedyKernelPca<TableType, do_centering>::Train(
   TableType &training_set,
   const KernelType &kernel,
   const int &num_components,
+  double greedy_kernel_pca_threshold, 
+  index_t dictionary_limit,
   ResultType *result) {
-
+  FL_SCOPED_LOG(Train);
   // The intial dictionary consists of the first point in the
   // randomly shuffled list.
   Dictionary<KernelType> current_dictionary;
+  current_dictionary.set_dictionary_limit(dictionary_limit);
+  current_dictionary.set_greedy_kernel_pca_threshold(greedy_kernel_pca_threshold);
   current_dictionary.Init(training_set, kernel);
 
   // The main loop.
   for (int t = 1; t < training_set.n_entries(); t++) {
     current_dictionary.AddBasis(t, kernel);
+    if (current_dictionary.size()>=dictionary_limit) {
+      fl::logger->Message()<<"Dictionary limit ("<<dictionary_limit<<") was reached, "
+        "while ("<<t<<") points were used. The rest ("<<training_set.n_entries()-t
+        <<") will not be used"<<std::endl;
+      break;
+    }
   }
   fl::logger->Message() << "Compressed " << training_set.n_entries()
   << " training points to " << current_dictionary.size()
-  << " dictionary points.\n";
+  << " dictionary points."<<std::endl;
 
   // Allocate the result.
   if (result->IsInitialized() == false) {
@@ -347,10 +369,12 @@ void GreedyKernelPca<TableType, do_centering>::Train(
   // Compute the projection of the training set on the final
   // dictionary.
   fl::dense::Matrix<double, false> training_set_projections;
+  fl::logger->Message()<<"Computing projections on the dictionary"<<std::endl;
   current_dictionary.ComputeProjections(kernel, &training_set_projections);
 
   // Solve the generalized eigenvalue problem and extract the
   // eigenvectors.
+  fl::logger->Message()<<"Computing the outer product"<<std::endl;
   success_t success_flag;
   fl::dense::Matrix<double, false> projection_matrix_outerproduct;
   fl::dense::Matrix<double, false> kernel_submatrix_copy;
@@ -358,20 +382,33 @@ void GreedyKernelPca<TableType, do_centering>::Train(
   projection_matrix_outerproduct.Init(current_dictionary.size(),
                                       current_dictionary.size());
   projection_matrix_outerproduct.SetZero();
-  for (int i = 0; i < training_set_projections.n_cols(); i++) {
-    fl::dense::Matrix<double, true> projection_column;
-    training_set_projections.MakeColumnVector(i, &projection_column);
-    for (int k = 0; k < projection_column.length(); k++) {
-      for (int j = 0; j < projection_column.length(); j++) {
-        projection_matrix_outerproduct.set(
-          j, k,
-          projection_matrix_outerproduct.get(j, k) +
-          projection_column[j] * projection_column[k]);
+  std::cout<<training_set_projections.n_rows()<<" x "<<training_set_projections.n_cols()<<std::endl;
+  index_t n_rows=training_set_projections.n_rows();
+  index_t n_cols=training_set_projections.n_cols();
+  fl::util::Timer timer;
+  timer.Start();
+  for (int i = 0; i < n_cols; i++) {
+    index_t offset=i*n_rows;
+    for (int k = 0; k < n_rows; k++) {
+      for (int j = k; j < n_rows; j++) {
+        *(projection_matrix_outerproduct.ptr()+j+k*n_rows)+=
+          *(training_set_projections.ptr()+j+offset) 
+          * *(training_set_projections.ptr()+k+offset);
       }
     }
   }
+  for(int i=0; i<n_rows; ++i) {
+    for(int j=i; i<n_rows; ++i) {
+      training_set_projections.set(j, 
+          i,
+          training_set_projections.get(i, j));
+    }
+  }
+  timer.End();
+  fl::logger->Message()<<"Total time for outer product: "<<timer.GetTotalElapsedTime();
   fl::dense::Matrix<double, true> eigenvalues;
 
+  fl::logger->Message()<<"Computing EigenValue decomposition"<<std::endl;
   // Solve the generalized eigenvalue problem.
   fl::dense::ops::GenEigenSymmetric(3, &projection_matrix_outerproduct,
                                     &kernel_submatrix_copy,
@@ -385,6 +422,7 @@ void GreedyKernelPca<TableType, do_centering>::Train(
     point1.set(0, eigenvalues[eigenvalues.length() - i - 1] /
                ((double) training_set.n_entries()));
   }
+  fl::logger->Message()<<"Final projection"<<std::endl;
   for (int i = 0; i < num_components; i++) {
     double length = 0;
     for (int j = 0; j < training_set.n_entries(); j++) {
@@ -410,7 +448,6 @@ void GreedyKernelPca<TableType, do_centering>::Train(
 
     // Take the square root so that you get the Euclidean length.
     length = sqrt(length);
-
     // Normalize the eigenvector.
     for (int j = 0; j < training_set.n_entries(); j++) {
       typename ResultType::ResultTableType::Point_t point;
@@ -422,6 +459,8 @@ void GreedyKernelPca<TableType, do_centering>::Train(
             ResultType::ResultTableType::Point_t::CalcPrecision_t>().get(i) / length);
     }
   }
+
+  fl::logger->Message()<<"Done"<<std::endl;
 }
 };
 };
