@@ -25,23 +25,25 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef FL_LITE_MLPACK_KERNEL_PCA_KERNEL_PCA_H
 #define FL_LITE_MLPACK_KERNEL_PCA_KERNEL_PCA_H
-#include <vector>
-#include <string>
-#include "boost/shared_ptr.hpp"
-#include "fastlib/base/base.h"
-namespace fl { namespace ml {
-  template<typename TemplateArgs>
-  class KernelPCA;
+#include "greedy_kernel_pca.h"
+namespace fl {
+  namespace ml {
+    template<typename>
+    class KernelPCA;
 
-  template<>
-  class KernelPCA<boost::mpl::void_> {
-    public:
-        template <typename DataAccessType, typename BranchType>
-        static int Main(DataAccessType *data, const std::vector<std::string> &args);
-        
+    template<>
+    class KernelPCA<boost::mpl::void_> {
+      public:
+        template<typename DataAccessType, typename Branch>
+        static int Main(DataAccessType *data,
+                        const std::vector<std::string> &args);
+
         template<typename DataAccessType>
         static void Run(DataAccessType *data,
-            const std::vector<std::string> &args);
-  };
-}}
+          const std::vector<std::string> &args);
+
+    };
+  }
+}
+
 #endif

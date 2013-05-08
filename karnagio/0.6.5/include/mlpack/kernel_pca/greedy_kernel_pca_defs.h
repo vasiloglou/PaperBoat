@@ -49,7 +49,6 @@ Core<TableType>::Branch(
   int level, DataAccessType *data, boost::program_options::variables_map &vm,
   TableType &table, MetricType *metric, KernelType *kernel,
   int num_components, ResultType *result) {
-
   typedef typename TableType::CalcPrecision_t CalcPrecision_t;
 
   switch (level) {
@@ -136,7 +135,12 @@ Core<TableType>::Branch(
 
       // Call the actual algorithm.
       fl::ml::GreedyKernelPca<TableType, do_centering>::Train(
-        table, *kernel, num_components, result);
+        table, 
+        *kernel, 
+        num_components, 
+        vm["threshold_to_enter_dictionary"].as<double>(),
+        vm["dictionary_limit"].as<index_t>(),
+        result);
       break;
   }
 }
@@ -230,24 +234,16 @@ ConstructBoostVariableMap(
    boost::program_options::value< std::string> ()->default_value(
      "eigenvalues.txt"),
    "The output file for the extracted kernel principal components.")
-  ("point",
-   boost::program_options::value<std::string>()->default_value("dense"),
-   "Point type used by allkn.  One of:\n"
-   "  dense, sparse, dense_sparse, categorical, dense_categorical")
-  ("tree",
-   boost::program_options::value<std::string>()->default_value("kdtree"),
-   "Tree structure used by allkn.  One of:\n"
-   "  kdtree, balltree")
-  ("log",
-   boost::program_options::value<std::string>()->default_value(""),
-   "A file to receive the log, or omit for stdout.")
-  ("loglevel",
-   boost::program_options::value<std::string>()->default_value("debug"),
-   "Level of log detail.  One of:\n"
-   "  debug: log everything\n"
-   "  verbose: log messages and warnings\n"
-   "  warning: log only warnings\n"
-   "  silent: no logging");
+  ("dictionary_limit",
+   boost::program_options::value<index_t>()->default_value(100),
+   "The greedy algorithm uses a dictionary to compute KDE. In some cases "
+   "this dictionary can grow too much. This option will limit it"
+  )(
+   "threshold_to_enter_dictionary", 
+   boost::program_options::value<double>()->default_value(1e-3),
+   "when the algorithm computes projections on the dictionary "
+   "it needs a threshold to decide if the vector belongs to the dictionary"
+  );
 
   boost::program_options::command_line_parser clp(args);
   clp.style(boost::program_options::command_line_style::default_style
@@ -270,6 +266,18 @@ ConstructBoostVariableMap(
     "non-negative.\n";
   }
 
+  if (vm->count("dictionary_limit")!=0) {
+    if ((*vm)["dictionary_limit"].as<index_t>()<=0) {
+      fl::logger->Die()<<"--dictionary_limit must be positive";
+    }
+  }
+
+  if (vm->count("threshold_to_enter_dictionary")!=0) {
+    if ((*vm)["threshold_to_enter_dictionary"].as<double>()<=0) {
+      fl::logger->Die()<<"--threshold_to_enter_dictionary must be positive";
+    }
+  }
+
   return false;
 }
 
@@ -279,8 +287,7 @@ int GreedyKernelPca<boost::mpl::void_, do_centering>::Main(
   DataAccessType *data,
   const std::vector<std::string> &args) {
 
-  srand(time(NULL));
-
+  FL_SCOPED_LOG(KPCA);
   boost::program_options::variables_map vm;
   bool help_specified = ConstructBoostVariableMap(args, &vm);
 

@@ -153,6 +153,10 @@ void Table<TemplateMap>::Init(const std::string &file, const char* mode) {
   data_->Init(file, mode);
 }
 
+template<typename TemplateMap>
+void Table<TemplateMap>::Init(const std::string &header) {
+  data_->Init(header);
+}
 
 template<typename TemplateMap>
 void Table<TemplateMap>::Destruct() {
