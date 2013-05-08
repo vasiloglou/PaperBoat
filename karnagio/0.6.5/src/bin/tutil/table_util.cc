@@ -24,7 +24,7 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 #include <vector>
 #include <string>
-#include "fastlib/table_util/table_util_.h"
+#include "fastlib/table_util/table_util.h"
 #include "fastlib/workspace/workspace_defs.h"
 #include "fastlib/table/table_dev.h"
 #include "fastlib/data/multi_dataset_dev.h"
