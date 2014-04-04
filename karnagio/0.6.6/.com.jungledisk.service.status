@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<serviceStatus>
+	<code>1</code>
+	<text>stopped</text>
+	<port>10891</port>
+</serviceStatus>
