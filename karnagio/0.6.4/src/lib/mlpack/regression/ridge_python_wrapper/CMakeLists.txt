@@ -1,1 +1,0 @@
-add_library(ridge_python_wrapper ridge_python_wrapper.cc)
